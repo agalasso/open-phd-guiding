@@ -1308,6 +1308,9 @@ void GearDialog::OnChoiceScope(wxCommandEvent& event)
             throw THROW_INFO("OnChoiceScope: m_pScope == NULL");
         }
 
+        m_pScope->EnableStopGuidingWhenSlewing(pConfig->Profile.GetBoolean("/scope/StopGuidingWhenSlewing",
+            m_pScope->CanCheckSlewing()));
+
         m_ascomScopeSelected = choice.Contains("ASCOM");
     }
     catch (const wxString& Msg)
@@ -1344,6 +1347,9 @@ void GearDialog::OnChoiceAuxScope(wxCommandEvent& event)
         {
             throw THROW_INFO("OnAuxChoiceScope: m_pAuxScope == NULL");
         }
+
+        m_pAuxScope->EnableStopGuidingWhenSlewing(pConfig->Profile.GetBoolean("/scope/StopGuidingWhenSlewingAux",
+            m_pAuxScope->CanCheckSlewing()));
     }
     catch (const wxString& Msg)
     {

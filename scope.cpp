@@ -457,13 +457,6 @@ Scope *Scope::Factory(const wxString& choice)
         {
             throw ERROR_INFO("ScopeFactory: Unknown Scope choice");
         }
-
-        if (pReturn)
-        {
-            // virtual function call means we cannot do this in the Scope constructor
-            pReturn->EnableStopGuidingWhenSlewing(pConfig->Profile.GetBoolean("/scope/StopGuidingWhenSlewing",
-                pReturn->CanCheckSlewing()));
-        }
     }
     catch (const wxString& Msg)
     {

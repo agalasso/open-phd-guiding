@@ -1209,6 +1209,20 @@ void Guider::DisplayImage(usImage *img)
     UpdateImageDisplay();
 }
 
+static void LoopingCheckSlewing(Guider *guider)
+{
+    if (guider->CurrentPosition().IsValid() &&
+        pPointingSource &&
+        pPointingSource->IsConnected() &&
+        pPointingSource->IsStopGuidingWhenSlewingEnabled() &&
+        pPointingSource->CanCheckSlewing() &&
+        pPointingSource->Slewing())
+    {
+        Debug.Write(wxS("scope started slewing while looping, deselect\n"));
+        guider->InvalidateCurrentPosition(true);
+    }
+}
+
 /*************  A new image is ready ************************/
 
 void Guider::UpdateGuideState(usImage *pImage, bool bStopping)
@@ -1243,6 +1257,7 @@ void Guider::UpdateGuideState(usImage *pImage, bool bStopping)
         case STATE_SELECTING:
         case STATE_SELECTED:
             EvtServer.NotifyLooping(pImage->FrameNum);
+            LoopingCheckSlewing(this);
             break;
         case STATE_CALIBRATING_PRIMARY:
         case STATE_CALIBRATING_SECONDARY:
