@@ -56,7 +56,6 @@ protected:
         wxSpinCtrl *m_pAggression;
         wxSpinCtrlDouble *m_pMinMove;
 
-
     public:
         GuideAlgorithmHysteresisConfigDialogPane(wxWindow *pParent, GuideAlgorithmHysteresis *pGuideAlgorithm);
         ~GuideAlgorithmHysteresisConfigDialogPane();

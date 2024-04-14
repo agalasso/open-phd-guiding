@@ -191,7 +191,6 @@ public:
         virtual void LayoutControls(Guider *pGuider, BrainCtrlIdMap& CtrlMap);
     };
 
-
     OVERLAY_MODE GetOverlayMode() const;
 
 public:

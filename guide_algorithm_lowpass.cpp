@@ -255,7 +255,6 @@ void GuideAlgorithmLowpass::
     m_pGuideAlgorithm->SetMinMove(m_pMinMove->GetValue());
 }
 
-
 void GuideAlgorithmLowpass::
 GuideAlgorithmLowpassConfigDialogPane::OnImageScaleChange()
 {

@@ -458,11 +458,11 @@ static bool InitImgCMOSGuider(usImage& img, const wxSize& FullSize, const unsign
         evenbias = evenbias / 8 - 1000;
         for (int x = 0; x < output_xsize; x += 2) { // Load value into new image array pulling out right bias
             int val = (int)*rawptr++ - oddbias;
-            if (val < 0) val = 0;  //Bounds check
+            if (val < 0) val = 0;  // Bounds check
             else if (val > 65535) val = 65535;
             *dataptr++ = (unsigned short)val;
             val = (int)*rawptr++ - evenbias;
-            if (val < 0) val = 0;  //Bounds check
+            if (val < 0) val = 0;  // Bounds check
             else if (val > 65535) val = 65535;
             *dataptr++ = (unsigned short)val;
         }

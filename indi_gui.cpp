@@ -291,7 +291,6 @@ void IndiGui::BuildPropWidget(INDI::Property property, wxPanel *parent, IndiProp
     if (! proplbl) proplbl = propname;
     auto proptype = property.getType();
 
-
     indiProp->page = parent;
     indiProp->panel = new wxPanel(parent);
     indiProp->gbs  = new wxGridBagSizer(0, 20);
@@ -696,7 +695,6 @@ void IndiGui::SetToggleButtonEvent(wxCommandEvent& event)
     }
     sendNewSwitch(svp);
 }
-
 
 void IndiGui::SetComboboxEvent(wxCommandEvent& event)
 {

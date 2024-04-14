@@ -266,7 +266,6 @@ bool GuideAlgorithmResistSwitch::SetParam(const wxString& name, double val)
 {
     bool err;
 
-
     if (name == "minMove")
         err = SetMinMove(val);
     else if (name == "fastSwitch") {
@@ -363,7 +362,6 @@ GraphControlPane *GuideAlgorithmResistSwitch::GetGraphControlPane(wxWindow *pPar
 {
     return new GuideAlgorithmResistSwitchGraphControlPane(pParent, this, label);
 }
-
 
 GuideAlgorithmResistSwitch::
     GuideAlgorithmResistSwitchGraphControlPane::

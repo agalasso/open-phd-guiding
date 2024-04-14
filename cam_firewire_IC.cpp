@@ -45,13 +45,10 @@
 // Deal with 8-bit vs. 16-bit??
 // Take care of gain capability
 
-
 // Start stream in InitCapture()?
-
 
 #include "cam_firewire.h"
 using namespace _DSHOWLIB_NAMESPACE;
-
 
 CameraFirewire::CameraFirewire()
 {
@@ -302,7 +299,6 @@ bool CameraFirewire::Capture(int duration, usImage& img, int options, const wxRe
     }
 
     // Flush
-
 
     // grab the next frame
 

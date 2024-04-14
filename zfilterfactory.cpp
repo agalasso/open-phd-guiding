@@ -32,7 +32,7 @@
 *
 */
 
-/* Based on mkfilter by A.J. Fisher, University of York    September 1992 
+/* Based on mkfilter by A.J. Fisher, University of York    September 1992
 https://www-users.cs.york.ac.uk/~fisher/mkfilter/
 <fisher@minster.york.ac.uk>
 */
@@ -107,7 +107,7 @@ ZFilterFactory::ZFilterFactory(FILTER_DESIGN f, int o, double p, bool mzt )
 void ZFilterFactory::splane() // compute S-plane poles for prototype LP filter
 {
 // Bessel filter
-// 
+//
     if (filt == BESSEL)                           // Bessel filter
     {
         int p = (m_order * m_order) / 4;                // ptr into table
@@ -122,23 +122,23 @@ void ZFilterFactory::splane() // compute S-plane poles for prototype LP filter
     }
     if (filt == BUTTERWORTH || filt == CHEBYCHEV)                // Butterworth filter
     {
-        for (int i = 0; i < 2 * m_order; i++) 
+        for (int i = 0; i < 2 * m_order; i++)
         {
             double theta = (m_order & 1) ? (i * M_PI) / m_order : ((i + 0.5) * M_PI) / m_order;
             setpole(std::polar(1.0,theta));
         }
     }
-    if (filt == CHEBYCHEV)                           // modify for Chebyshev (p. 136 DeFatta et al.) 
-    { 
-        if (chripple >= 0.0) 
+    if (filt == CHEBYCHEV)                           // modify for Chebyshev (p. 136 DeFatta et al.)
+    {
+        if (chripple >= 0.0)
         {
             fprintf(stderr, "mkfilter: Chebyshev ripple is %g dB; must be .lt. 0.0\n", chripple);
-            exit(1);        
+            exit(1);
         }
         double rip = pow(10.0, -chripple / 10.0);
         double eps = sqrt(rip - 1.0);
         double y = asinh(1.0 / eps) / (double) m_order;
-        for (int i = 0; i < spoles.size(); i++) 
+        for (int i = 0; i < spoles.size(); i++)
         {
             spoles[i].real(spoles[i].real()*sinh(y));
             spoles[i].imag(spoles[i].imag()*cosh(y));
@@ -149,12 +149,12 @@ void ZFilterFactory::splane() // compute S-plane poles for prototype LP filter
 void ZFilterFactory::prewarp()
 {
     /* for bilinear transform, perform pre-warp on alpha values */
-    if (isMzt) 
+    if (isMzt)
     { //**Dont prewarp; or use z-transform
         warped_alpha1 = raw_alpha1;
         warped_alpha2 = raw_alpha2;
     }
-    else 
+    else
     {
         warped_alpha1 = tan(M_PI * raw_alpha1) / M_PI;
         warped_alpha2 = tan(M_PI * raw_alpha2) / M_PI;
@@ -169,7 +169,7 @@ void ZFilterFactory::normalize() /* called for trad, not for -Re or -Pi */
     szeros.clear();
 }
 
-void ZFilterFactory::zplane() 
+void ZFilterFactory::zplane()
 {
 // given S-plane poles & zeros, compute Z-plane poles & zeros
 // using bilinear transform or matched z-transform
@@ -219,7 +219,7 @@ void ZFilterFactory::expandpoly() // given Z-plane poles & zeros, compute top & 
 
 void ZFilterFactory::expand(const std::vector<std::complex<double>>& pz, std::vector<std::complex<double>>& coeffs)
 {
-    // compute product of poles or zeros as a polynomial of z 
+    // compute product of poles or zeros as a polynomial of z
     int i;
     coeffs.clear();
     coeffs.push_back(1.0);
@@ -253,7 +253,7 @@ void ZFilterFactory::multin(const std::complex<double>& w, std::vector<std::comp
 std::complex<double> ZFilterFactory::eval(const std::vector<std::complex<double>>& coeffs, const std::complex<double>& z)
 { /* evaluate polynomial in z, substituting for z */
     std::complex<double> sum = std::complex<double>(0.0,0.0);
-    for (int i = coeffs.size()-1; i >= 0; i--) 
+    for (int i = coeffs.size()-1; i >= 0; i--)
         sum = (sum * z) + coeffs[i];
     return sum;
 }

@@ -32,7 +32,6 @@
  *
  */
 
-
 #include "phd.h"
 
 #ifdef NEB_SBIG

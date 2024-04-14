@@ -1079,7 +1079,7 @@ Mount::MOVE_RESULT Mount::MoveOffset(GuiderOffset *ofs, unsigned int moveOptions
  * does the reverse, converting a mount x and y into pixels coordinates.
  *
  * Note: If a mount's x and y axis are not perfectly perpendicular, the reverse transform
- * will not be able to accuratey reverse the forward transform. The amount of inaccuracy
+ * will not be able to accurately reverse the forward transform. The amount of inaccuracy
  * depends upon the perpendicular error.
  *
  * The mount is calibrated but moving 1 axis, then the other, watching where the mount
@@ -1096,9 +1096,9 @@ Mount::MOVE_RESULT Mount::MoveOffset(GuiderOffset *ofs, unsigned int moveOptions
  * will either be 0 or 180, depending on whether the axis motion was reversed
  * during calibration.
  *
- * I put this quote in when I was trying to fix the cos/cos code.  Hopefully
- * since  completely rewrote that code, I underand the new code. But I'm going
- * to leave it hear as it still seems relevant, given the amount of trouble
+ * I put this quote in when I was trying to fix the cos/cos code. Hopefully
+ * since completely rewrote that code, I understand the new code. But I'm going
+ * to leave it here as it still seems relevant, given the amount of trouble
  * I had getting this code to work.
  *
  * In the words of Stevie Wonder, noted Computer Scientist and singer/songwriter
@@ -1109,7 +1109,7 @@ Mount::MOVE_RESULT Mount::MoveOffset(GuiderOffset *ofs, unsigned int moveOptions
  * Superstition ain't the way"
  *
  * As part of trying to get the transforms to work, I wrote a routine called TestTransforms()
- * which does a bunch of forward/reverse trasnform pairs, checking the results as it goes.
+ * which does a bunch of forward/reverse transform pairs, checking the results as it goes.
  *
  * If you ever have change the transform functions, it would be wise to #define TEST_TRANSFORMS
  * to make sure that you (at least) didn't break anything that TestTransforms() checks for.
@@ -1131,8 +1131,8 @@ bool Mount::TransformCameraCoordinatesToMountCoordinates(const PHD_Point& camera
         double hyp   = cameraVectorEndpoint.Distance();
         double cameraTheta = cameraVectorEndpoint.Angle();
 
-        double xAngle = cameraTheta - m_cal.xAngle;
-        double yAngle = cameraTheta - (m_cal.xAngle + m_yAngleError);
+        double xAngle = cameraTheta - m_cal.xAngle;                   // xAngle measures RA axis rotation vs camera X axis, positive is CW from x axis
+        double yAngle = cameraTheta - (m_cal.xAngle + m_yAngleError); // m_yAngleError is the orthogonality error
 
         // Convert theta and hyp into X and Y
 

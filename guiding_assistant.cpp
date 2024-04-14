@@ -1941,7 +1941,6 @@ void GuidingAsstWin::UpdateInfo(const GuideStepInfo& info)
         FillResultCell(m_othergrid, m_dec_drift_loc, decDriftPerMin, decDriftPerMin * pxscale, PXPERMIN, ARCSECPERMIN);
         m_othergrid->SetCellValue(m_pae_loc, wxString::Format("%s %.1f %s", declination == UNKNOWN_DECLINATION ? "> " : "", alignmentError, ARCMIN));
     }
-
 }
 
 wxWindow *GuidingAssistant::CreateDialogBox()

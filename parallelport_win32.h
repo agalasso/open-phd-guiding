@@ -36,7 +36,6 @@
 #if !defined(PARALLELPORT_WIN32_H_INCLUDED) && defined (__WINDOWS__)
 #define PARALLELPORT_WIN32_H_INCLUDED
 
-
 class ParallelPortWin32:public ParallelPort
 {
     short m_portAddr;

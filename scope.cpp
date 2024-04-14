@@ -2067,8 +2067,6 @@ void ScopeConfigDialogCtrlSet::LoadValues()
             m_pUseBacklashComp->SetValue(false);
             m_pUseBacklashComp->Enable(false);
         }
-
-
     }
 }
 

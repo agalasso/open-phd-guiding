@@ -58,7 +58,6 @@ protected:
         wxSpinCtrl *m_pAggression;
         wxCheckBox *m_pFastSwitch;
 
-
     public:
         GuideAlgorithmResistSwitchConfigDialogPane(wxWindow *pParent, GuideAlgorithmResistSwitch *pGuideAlgorithm);
         ~GuideAlgorithmResistSwitchConfigDialogPane();

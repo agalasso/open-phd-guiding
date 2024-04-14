@@ -1301,7 +1301,6 @@ void ProfileWizard::OnPrev(wxCommandEvent& evt)
     UpdateState(-1);
 }
 
-
 // Supporting dialog classes
 ConnectDialog::ConnectDialog(ProfileWizard* parent, ProfileWizard::DialogState currState) :
 wxDialog(parent, wxID_ANY, _("Ask About Connection"), wxDefaultPosition, wxDefaultSize, wxCAPTION | wxCLOSE_BOX)

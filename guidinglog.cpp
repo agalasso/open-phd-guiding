@@ -598,7 +598,6 @@ void GuidingLog::FrameDropped(const FrameDroppedInfo& info)
     Flush();
 }
 
-
 void GuidingLog::CalibrationFrameDropped(const FrameDroppedInfo& info)
 {
     if (!m_enabled)

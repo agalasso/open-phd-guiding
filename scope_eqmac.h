@@ -56,7 +56,6 @@ private:
     AppleEvent E6Event;
     SInt16 E6ReturnCode;
 
-
     OSErr E6AESendRoutine(double ewCorrection, double nsCorrection, int mountcode);
 
 };

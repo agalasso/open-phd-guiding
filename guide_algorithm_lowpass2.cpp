@@ -273,7 +273,6 @@ UnloadValues(void)
     m_pGuideAlgorithm->SetMinMove(m_pMinMove->GetValue());
 }
 
-
 void GuideAlgorithmLowpass2::
 GuideAlgorithmLowpass2ConfigDialogPane::OnImageScaleChange()
 {

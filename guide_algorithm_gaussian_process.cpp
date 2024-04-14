@@ -39,7 +39,6 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 */
 
-
 #include "phd.h"
 
 #include "guide_algorithm_gaussian_process.h"
@@ -419,7 +418,6 @@ public:
     GuideAlgorithmGaussianProcessDialogPane& operator=(const GuideAlgorithmGaussianProcess::GuideAlgorithmGaussianProcessDialogPane&) = delete;
 };
 
-
 GuideAlgorithmGaussianProcess::GuideAlgorithmGaussianProcess(Mount *pMount, GuideAxis axis)
     : GuideAlgorithm(pMount, axis), GPG(0), dark_tracking_mode_(false)
 {
@@ -492,7 +490,6 @@ GuideAlgorithmGaussianProcess::~GuideAlgorithmGaussianProcess()
     }
     delete GPG;
 }
-
 
 ConfigDialogPane *GuideAlgorithmGaussianProcess::GetConfigDialogPane(wxWindow *pParent)
 {
@@ -919,7 +916,6 @@ wxString GuideAlgorithmGaussianProcess::GetSettingsSummary() const
     ;
 
     std::vector<double> hyperparameters = GetGPHyperparameters();
-
 
     return wxString::Format(
         format,

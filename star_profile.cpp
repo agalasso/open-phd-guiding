@@ -350,6 +350,7 @@ void ProfileWindow::OnPaint(wxPaintEvent& WXUNUSED(evt))
             wxString fwhmLine = wxString::Format(_("%s FWHM: %.2f"), profileLabel, fwhm);
             int fwhmLineWidth = dc.GetTextExtent(fwhmLine).GetWidth();
             dc.DrawText(fwhmLine, 5, ysize - labelTextHeight + 5);
+
             // Show X/Y of centroid if there's room
             if ((imageLeftMargin > fwhmLineWidth + 20) && (ysize - labelTextHeight + 5 > imageBottom))
                 dc.DrawText(wxString::Format("X: %0.2f, Y: %0.2f", pFrame->pGuider->CurrentPosition().X, pFrame->pGuider->CurrentPosition().Y), imageLeftMargin, ysize - labelTextHeight + 5);

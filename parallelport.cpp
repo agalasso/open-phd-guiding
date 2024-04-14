@@ -75,7 +75,6 @@ bool ParallelPort::ManipulateByte(BYTE clearBits, BYTE setBits)
         bError = true;
     }
 
-
     return bError;
 }
 

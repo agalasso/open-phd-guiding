@@ -40,7 +40,6 @@
 #include "camera.h"
 #include "scope.h"
 
-
 #if defined (INDI_CAMERA) || defined (GUIDE_INDI)
 
 #include "config_indi.h"

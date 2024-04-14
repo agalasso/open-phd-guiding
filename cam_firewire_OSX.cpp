@@ -80,7 +80,7 @@ bool CameraFirewire::Connect(const wxString& camId)
     dc1394video_mode_t vidmode;
 
     if(m_dcContext == 0)
-    { 
+    {
         m_dcContext = dc1394_new();
     }
     if(m_dcContext == 0)
@@ -113,9 +113,9 @@ bool CameraFirewire::Connect(const wxString& camId)
             return true;
         }
     }
-    
+
     uint64_t camera_guid = cameras->ids[CamNum].guid;
-    
+
     // Free unused cameras, open the one with the guid above.
     dc1394_camera_free_list(cameras);
 

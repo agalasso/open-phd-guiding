@@ -646,7 +646,7 @@ void MyFrame::SetComboBoxWidth(wxComboBox *pComboBox, unsigned int extra)
 
         if (thisWidth > width)
         {
-            width =  thisWidth;
+            width = thisWidth;
         }
     }
 

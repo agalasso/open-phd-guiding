@@ -54,7 +54,7 @@ struct PolarDriftToolWin : public wxFrame
     wxTextCtrl *w_notesText;
     wxButton *m_closeButton;      // Close button
     wxStatusBar *m_statusBar;
-    wxChoice *m_hemiChoice;     // Listbox for manual hemisphere choice 
+    wxChoice *m_hemiChoice;     // Listbox for manual hemisphere choice
     wxCheckBox *m_mirrorCheck;     // Checkbox for mirrored camera
     bool m_savePrimaryMountEnabled;
     bool m_saveSecondaryMountEnabled;

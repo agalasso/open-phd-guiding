@@ -32,7 +32,6 @@
  *
  */
 
-
 #if !defined(SERIALPORT_MAC_H_INCLUDED) && defined (__APPLE__)
 #define SERIALPORT_MAC_H_INCLUDED
 

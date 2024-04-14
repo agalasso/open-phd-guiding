@@ -1050,8 +1050,6 @@ void MyFrame::GuideButtonClick(bool interactive, const wxString& context)
                 return;
         }
 
-
-
         if (interactive && pPointingSource && pPointingSource->IsConnected() &&
             pPointingSource->CanReportPosition())
         {

@@ -53,7 +53,7 @@ public:
     bool    Capture(int duration, usImage& img, int options, const wxRect& subframe) override;
     bool    Connect(const wxString& camId) override;
     bool    Disconnect() override;
-    bool HasNonGuiCapture() override { return true; }
+    bool    HasNonGuiCapture() override { return true; }
     wxByte  BitsPerPixel() override;
 };
 

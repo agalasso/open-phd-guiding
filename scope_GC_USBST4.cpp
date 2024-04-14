@@ -42,7 +42,6 @@
 #include <errno.h>
 #endif
 
-
 #define _U(String)  wxString(String, wxConvUTF8).c_str()
 
 #ifdef __APPLE__

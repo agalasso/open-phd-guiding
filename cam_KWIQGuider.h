@@ -33,7 +33,6 @@
  *
  */
 
-
 #ifndef CAM_KWIQGUIDER_INCLUDED
 #define CAM_KWIQGUIDER_INCLUDED
 

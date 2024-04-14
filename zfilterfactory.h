@@ -108,5 +108,3 @@ inline std::string ZFilterFactory::getname() const
 }
 
 #endif /* ZFILTER_FACTORY_H_INCLUDED */
-
-

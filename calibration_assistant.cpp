@@ -139,7 +139,6 @@ public:
     CalCustomDialog(CalibrationAssistant* Parent, int DefaultHA, int DefaultDec);
 };
 
-
 // Utility function to add the <label, input> pairs to a flexgrid
 static void AddTableEntryPair(wxWindow *parent, wxFlexGridSizer *pTable, const wxString& label, wxWindow *pControl)
 {

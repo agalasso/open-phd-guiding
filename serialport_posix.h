@@ -44,8 +44,8 @@ class SerialPortPosix : public SerialPort
     int m_fd;
 #if defined (__APPLE__)
     struct termios m_originalAttrs;
-#endif 
-    
+#endif
+
 public:
 
     wxArrayString GetSerialPortList() override;
