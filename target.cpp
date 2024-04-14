@@ -302,7 +302,6 @@ void TargetClient::OnPaint(wxPaintEvent& WXUNUSED(evt))
     }
 
     // Draw circles
-
     for (int i = 1 ; i <= 4 ; i++)
     {
         int rr = radius_max * i / 4;
@@ -336,8 +335,10 @@ void TargetClient::OnPaint(wxPaintEvent& WXUNUSED(evt))
     }
 
     // Draw labels
-    dc.DrawText(_("RA"), leftEdge, center.y - 15);
-    dc.DrawText(_("Dec"), center.x - 35, topEdge - 3);
+    int d_width = 10, d_height = 10;
+    dc.GetTextExtent(_("0"), &d_width, &d_height);
+    dc.DrawText(_("RA"), leftEdge, center.y - 3 - d_height);
+    dc.DrawText(_("Dec"), center.x + 5, center.y - radius_max - d_height);
 
     // Draw impacts
     unsigned int startPoint = m_maxHistorySize - m_length;
@@ -359,15 +360,15 @@ void TargetClient::OnPaint(wxPaintEvent& WXUNUSED(evt))
 
     GuideParity raParity = pMount ? pMount->RAParity() : GUIDE_PARITY_UNKNOWN;
     if (raParity == GUIDE_PARITY_EVEN)
-        dc.DrawText(_("SkyE"), size.x - 30, center.y + 5);  // sky E = mount E
+        dc.DrawText(_("SkyE"), size.x - d_width * 5, center.y + 5);  // sky E = mount E
     else if (raParity == GUIDE_PARITY_ODD)
-        dc.DrawText(_("SkyE"), leftEdge, center.y + 5);     // sky E = mount W
+        dc.DrawText(_("SkyE"), leftEdge, center.y + 5);              // sky E = mount W
 
     GuideParity decParity = pMount ? pMount->DecParity() : GUIDE_PARITY_UNKNOWN;
     if (decParity == GUIDE_PARITY_EVEN)
-        dc.DrawText(_("SkyN"), center.x + 5, topEdge - 3);  // sky N = mount N
+        dc.DrawText(_("SkyN"), center.x + 5, center.y + 5 - radius_max);    // sky N = mount N
     else if (decParity == GUIDE_PARITY_ODD)
-        dc.DrawText(_("SkyN"), center.x + 5, size.y - 15);  // sky N = mount S
+        dc.DrawText(_("SkyN"), center.x + 5, center.y + 5 + radius_max);    // sky N = mount S
 
     dc.SetPen(wxPen(wxColour(127, 127, 255), 1, wxPENSTYLE_SOLID));
     for (unsigned int i = startPoint; i < m_maxHistorySize; i++)

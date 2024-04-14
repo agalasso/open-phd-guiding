@@ -229,7 +229,7 @@ bool Star::Find(const usImage *pImg, int searchRegion, int base_x, int base_y, F
             peak_val /= 16; // smoothed peak value
         }
 
-        // meaure noise in the annulus with inner radius A and outer radius B
+        // measure noise in the annulus with inner radius A and outer radius B
         int const A = 7;   // inner radius
         int const B = 12;  // outer radius
         int const A2 = A * A;
@@ -428,7 +428,7 @@ bool Star::Find(const usImage *pImg, int searchRegion, int base_x, int base_y, F
             goto done;
         }
 
-        // maxADU not known, use the "flat-top" hueristic
+        // maxADU not known, use the "flat-top" heuristic
         //
         // even at saturation, the max values may vary a bit due to noise
         // Call it saturated if the the top three values are within 32 parts per 65535 of max for 16-bit cameras,

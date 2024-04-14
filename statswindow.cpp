@@ -269,7 +269,7 @@ void StatsWindow::UpdateCooler()
 static wxString fov(const wxSize& sensorFormat, double sampling)
 {
     if (sampling != 1.0)
-        return wxString::Format("% 4.1f x % 4.1f  %s", sensorFormat.x * sampling / 60.0, sensorFormat.y * sampling / 60.0, _("arc-min"));
+        return wxString::Format("%4.1f x %4.1f %s", sensorFormat.x * sampling / 60.0, sensorFormat.y * sampling / 60.0, _("arc-min"));
     else
         return " ";
 }
