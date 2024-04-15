@@ -79,6 +79,12 @@ Scope::Scope()
     m_limitReachedDeferralTime = wxDateTime::GetTimeNow();
     m_graphControlPane = nullptr;
     m_CalDetailsValidated = false;
+    m_canSetTracking = false;
+    for (int i = 0; i < driveMaxRate; i++)
+    {
+        m_mountRates[i].name = wxEmptyString;
+        m_mountRates[i].canSet = false;
+    }
 
     wxString prefix = "/" + GetMountClassName();
     int calibrationDuration = pConfig->Profile.GetInt(prefix + "/CalibrationDuration", DefaultCalibrationDuration);
@@ -1710,6 +1716,51 @@ bool Scope::UpdateCalibrationState(const PHD_Point& currentLocation)
 double Scope::GetDeclinationRadians()
 {
     return UNKNOWN_DECLINATION;
+}
+
+void Scope::EnumerateTrackingRates()
+{
+}
+
+bool Scope::GetTracking(bool* tracking, bool verbose)
+{
+    return true; // error
+}
+
+bool Scope::SetTracking(bool tracking)
+{
+    return true; // error
+}
+
+bool Scope::CanSetTracking()
+{
+    return false;
+}
+
+bool Scope::GetTrackingRate(enum DriveRates* rate, bool verbose)
+{
+    *rate = driveSidereal;
+    return false;
+}
+
+bool Scope::GetTrackingRate(enum DriveRates* rate, double *ra_rate, double *dec_rate, bool verbose)
+{
+    *rate = driveSidereal;
+    if (ra_rate)
+        *ra_rate = 0;
+    if (dec_rate)
+        *dec_rate = 0;
+    return false;
+}
+
+bool Scope::SetTrackingRate(enum DriveRates rate)
+{
+    return true; // error
+}
+
+bool Scope::SetTrackingRateOffsets(double raRateOffset, double decRateOffset)
+{
+    return true; // error
 }
 
 // Baseline implementations for non-ASCOM subclasses.  Methods will

@@ -287,7 +287,33 @@ bool DispatchObj::PutProp(DISPID dispid, double val)
     return SUCCEEDED(hr);
 }
 
+bool DispatchObj::PutProp(DISPID dispid, LONG val)
+{
+    VARIANTARG rgvarg[1];
+    rgvarg[0].vt = VT_I4;
+    rgvarg[0].lVal = val;
+    DISPID dispidNamed = DISPID_PROPERTYPUT;
+    DISPPARAMS dispParms;
+    dispParms.cArgs = 1;
+    dispParms.rgvarg = rgvarg;
+    dispParms.cNamedArgs = 1;
+    dispParms.rgdispidNamedArgs = &dispidNamed;
+    Variant res;
+    HRESULT hr = m_idisp->Invoke(dispid, IID_NULL, LOCALE_USER_DEFAULT, DISPATCH_PROPERTYPUT, &dispParms, &res, &m_excep, NULL);
+    if (FAILED(hr))
+        Debug.AddLine(wxString::Format("putprop: [%x] %s", hr, _com_error(hr).ErrorMessage()));
+    return SUCCEEDED(hr);
+}
+
 bool DispatchObj::PutProp(OLECHAR *name, bool val)
+{
+    DISPID dispid;
+    if (!GetDispatchId(&dispid, name))
+        return false;
+    return PutProp(dispid, val);
+}
+
+bool DispatchObj::PutProp(OLECHAR* name, double val)
 {
     DISPID dispid;
     if (!GetDispatchId(&dispid, name))

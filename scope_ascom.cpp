@@ -10,6 +10,8 @@
  *  Copyright (c) 2012-2013 Bret McKee
  *  All rights reserved.
  *
+ *  Modified by Leo Shatz
+ *
  *  This source code is distributed under the following "BSD" license
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -70,6 +72,8 @@ ScopeASCOM::ScopeASCOM(const wxString& choice)
     dispid_decguiderate = DISPID_UNKNOWN;
     dispid_sideofpier = DISPID_UNKNOWN;
     dispid_abortslew = DISPID_UNKNOWN;
+    dispid_tracking = DISPID_UNKNOWN;
+    dispid_trackingrate = DISPID_UNKNOWN;
 }
 
 ScopeASCOM::~ScopeASCOM()
@@ -206,6 +210,12 @@ void ScopeASCOM::SetupDialog()
 bool ScopeASCOM::Connect()
 {
     bool bError = false;
+    m_canSetTracking = false;
+    for (int i = 0; i < driveMaxRate; i++)
+    {
+        m_mountRates[i].name = wxEmptyString;
+        m_mountRates[i].canSet = false;
+    }
 
     try
     {
@@ -408,6 +418,28 @@ bool ScopeASCOM::Connect()
             Debug.Write(wxString::Format("ASCOM scope CanSlewAsync is %s\n", m_canSlewAsync ? "true" : "false"));
         }
 
+        if (!pScopeDriver.GetProp(&vRes, L"CanSetTracking"))
+        {
+            Debug.Write("cannot get CanSetTracking\n");
+            m_canSetTracking = false;
+        }
+        else
+        {
+            m_canSetTracking = (vRes.boolVal == VARIANT_TRUE);
+        }
+
+        if (!pScopeDriver.GetDispatchId(&dispid_trackingrate, L"TrackingRate"))
+        {
+            Debug.Write("cannot get dispid_trackingrate\n");
+            dispid_trackingrate = DISPID_UNKNOWN;
+        }
+
+        if (!pScopeDriver.GetDispatchId(&dispid_tracking, L"Tracking"))
+        {
+            Debug.Write("cannot get dispid_tracking\n");
+            dispid_trackingrate = DISPID_UNKNOWN;
+        }
+
         Debug.Write(wxString::Format("%s connected\n", Name()));
 
         Scope::Connect();
@@ -419,6 +451,9 @@ bool ScopeASCOM::Connect()
         POSSIBLY_UNUSED(Msg);
         bError = true;
     }
+
+    // Enumerate the tracking rates
+    EnumerateTrackingRates();
 
     return bError;
 }
@@ -464,6 +499,136 @@ bool ScopeASCOM::Disconnect()
     Scope::Disconnect();
 
     return bError;
+}
+
+// Enumerate all supported tracking rates
+void ScopeASCOM::EnumerateTrackingRates()
+{
+    // Get all supported tracking rates
+    try
+    {
+        if (!IsConnected())
+        {
+            throw ERROR_INFO("ASCOM Scope: attempt to enumeration tracking rates when not connected");
+        }
+
+        GITObjRef scope(m_gitEntry);
+        Variant vTrackingRates;
+        if (scope.GetProp(&vTrackingRates, L"TrackingRates"))
+        {
+            // Assuming varTrackingRates now holds the IDispatch* to the TrackingRates collection
+            IDispatch* pTrackingRates = vTrackingRates.pdispVal;
+            DispatchClass iListClass;
+            DispatchObj iList(pTrackingRates, &iListClass);
+
+            Variant vCount;
+            if (iList.GetProp(&vCount, L"Count"))
+            {
+                unsigned int const ratesCount = vCount.intVal;
+                Debug.Write(wxString::Format("ASCOM scope: reports count=%d of tracking rates\n", ratesCount));
+                for (unsigned int i = 1; i <= ratesCount; ++i)
+                {
+                    Variant vRate;
+                    if (iList.GetProp(&vRate, L"Item", i))
+                    {
+                        enum DriveRates driveRate = (enum DriveRates)vRate.intVal;
+                        switch (driveRate)
+                        {
+                        case driveSidereal:
+                            m_mountRates[driveRate].name = _("Sidereal");
+                            m_mountRates[driveRate].canSet = true;
+                            break;
+                        case driveLunar:
+                            m_mountRates[driveRate].name = _("Lunar");
+                            m_mountRates[driveRate].canSet = true;
+                            break;
+                        case driveSolar:
+                            m_mountRates[driveRate].name = _("Solar");
+                            m_mountRates[driveRate].canSet = true;
+                            break;
+                        case driveKing:
+                            m_mountRates[driveRate].name = _("King");
+                            m_mountRates[driveRate].canSet = true;
+                            break;
+                        }
+                        Debug.Write(wxString::Format("ASCOM scope: supports tracking rate: %d\n", driveRate));
+                    }
+                }
+            }
+            else
+            {
+                Debug.Write("ASCOM scope: cannot get count of TrackingRates\n");
+            }
+        }
+        else
+        {
+            Debug.Write("ASCOM scope: cannot get list of TrackingRates\n");
+        }
+
+        enum DriveRates savedRate = driveSidereal;
+        Debug.Write("ASCOM scope: testing if mount supports setting Sidereal/Lunar/Solar tracking rates\n");
+        if (GetTrackingRate(&savedRate, true))
+        {
+            throw ("ASCOM scope: could not get current tracking rate");
+        }
+
+        // If mount doesn't enumerate supported rates, try setting them one by one
+        for (int i = driveSidereal; i < driveMaxRate; i++)
+        {
+            enum DriveRates currRate, testRate;
+            bool bErr;
+            const int timeout = 3000;
+            wxStopWatch sWatch;
+
+            testRate = (enum DriveRates) i;
+            Debug.Write(wxString::Format("ASCOM scope: testing tracking rate %d\n", testRate));
+            if (!SetTrackingRate(testRate))
+            {
+                // Wait up to 3 seconds for mount to change tracking rate
+                sWatch.Start();
+                do
+                {
+                    wxMilliSleep(100);
+                    bErr = GetTrackingRate(&currRate, true);
+                } while ((bErr || (currRate != testRate)) && (sWatch.Time() <= timeout));
+
+                if (!bErr && (currRate == testRate))
+                {
+                    Debug.Write(wxString::Format("ASCOM scope: can get/set tracking rate: %d [t=%d msec]\n", testRate, (int) sWatch.Time()));
+                    m_mountRates[i].canSet = true;
+                }
+            }
+            else
+            {
+                m_mountRates[i].canSet = false;
+            }
+
+            switch (testRate)
+            {
+            case driveSidereal:
+                m_mountRates[testRate].name = _("Sidereal");
+                break;
+            case driveLunar:
+                m_mountRates[testRate].name = _("Lunar");
+                break;
+            case driveSolar:
+                m_mountRates[testRate].name = _("Solar");
+                break;
+            case driveKing:
+                if (m_mountRates[testRate].name == wxEmptyString)
+                    m_mountRates[testRate].name = _("Custom");
+                break;
+            }
+        }
+
+        // Restore original rate
+        Debug.Write(wxString::Format("ASCOM mount: restore saved tracking rate %d\n", savedRate));
+        SetTrackingRate(savedRate);
+    }
+    catch (const wxString& Msg)
+    {
+        POSSIBLY_UNUSED(Msg);
+    }
 }
 
 #define CheckSlewing(dispobj, result) \
@@ -829,6 +994,197 @@ double ScopeASCOM::GetDeclinationRadians()
     Debug.Write(wxString::Format("ScopeASCOM::GetDeclinationRadians() returns %s\n", DeclinationStr(dReturn)));
 
     return dReturn;
+}
+
+bool ScopeASCOM::GetTrackingRate(enum DriveRates* rate, bool verbose)
+{
+    return GetTrackingRate(rate, nullptr, nullptr, verbose);
+}
+
+bool ScopeASCOM::GetTrackingRate(enum DriveRates* rate, double *ra_rate, double *dec_rate, bool verbose)
+{
+    bool bError = false;
+
+    try
+    {
+        if (!IsConnected())
+        {
+            throw ERROR_INFO("ASCOM Scope: cannot get tracking rate when not connected");
+        }
+
+        GITObjRef scope(m_gitEntry);
+
+        Variant vRes;
+
+        if (!scope.GetProp(&vRes, dispid_trackingrate))
+        {
+            throw ERROR_INFO("ASCOM Scope: GetTrackingRate() failed: " + ExcepMsg(scope.Excep()));
+        }
+
+        *rate = (enum DriveRates) vRes.iVal;
+
+        // EQMOD is known to return bogus rates, so we use offsets to correct them
+        if (*rate == driveSidereal)
+        {
+            if (ra_rate && scope.GetProp(&vRes, L"RightAscensionRate"))
+            {
+                *ra_rate = vRes.dblVal;
+                if (verbose)
+                    Debug.Write(wxString::Format("ScopeASCOM::GetTrackingRate() RightAscensionRate=%.9f\n", *ra_rate));
+            }
+            if (dec_rate && scope.GetProp(&vRes, L"DeclinationRate"))
+            {
+                *dec_rate = vRes.dblVal;
+                if (verbose)
+                    Debug.Write(wxString::Format("ScopeASCOM::GetTrackingRate() DeclinationRate=%.9f\n", *dec_rate));
+            }
+        }
+    }
+    catch (const wxString& Msg)
+    {
+        bError = true;
+        POSSIBLY_UNUSED(Msg);
+    }
+
+    if (verbose)
+        Debug.Write(wxString::Format("ScopeASCOM::GetTrackingRate() returns %s, tracking rate = %d\n", bError ? "error" : "success", bError ? 0 : *rate));
+
+    return bError;
+}
+
+bool ScopeASCOM::SetTrackingRate(enum DriveRates rate)
+{
+    bool bError = false;
+
+    try
+    {
+        if (!IsConnected())
+        {
+            throw ERROR_INFO("ASCOM Scope: cannot set tracking rate when not connected");
+        }
+
+        GITObjRef scope(m_gitEntry);
+
+        if (!scope.PutProp(dispid_trackingrate, (LONG) rate))
+        {
+            throw ERROR_INFO("ASCOM Scope: SetTrackingRate() failed: " + ExcepMsg(scope.Excep()));
+        }
+    }
+    catch (const wxString& Msg)
+    {
+        bError = true;
+        POSSIBLY_UNUSED(Msg);
+    }
+
+    Debug.Write(wxString::Format("ScopeASCOM::SetTrackingRate() returns %s, tracking rate = %d\n", bError ? "error" : "success", bError ? 0 : rate));
+
+    return bError;
+}
+
+bool ScopeASCOM::SetTrackingRateOffsets(double raRateOffset, double decRateOffset)
+{
+    bool bError = false;
+
+    try
+    {
+        if (!IsConnected())
+        {
+            throw ERROR_INFO("ASCOM Scope: cannot set tracking rate when not connected");
+        }
+
+        GITObjRef scope(m_gitEntry);
+
+        if (!scope.PutProp(L"RightAscensionRate", raRateOffset))
+        {
+            throw ERROR_INFO("ASCOM Scope: SetTrackingRateOffsets(RightAscensionRate) failed: " + ExcepMsg(scope.Excep()));
+        }
+        if (!scope.PutProp(L"DeclinationRate", decRateOffset))
+        {
+            throw ERROR_INFO("ASCOM Scope: SetTrackingRateOffsets(DeclinationRate) failed: " + ExcepMsg(scope.Excep()));
+        }
+    }
+    catch (const wxString& Msg)
+    {
+        bError = true;
+        POSSIBLY_UNUSED(Msg);
+    }
+
+    Debug.Write(wxString::Format("ScopeASCOM::SetTrackingRateOffsets() returns %s\n", bError ? "error" : "success"));
+
+    return bError;
+}
+
+bool ScopeASCOM::GetTracking(bool* tracking, bool verbose)
+{
+    bool bError = false;
+
+    try
+    {
+        if (!IsConnected())
+        {
+            throw ERROR_INFO("ASCOM Scope: cannot get tracking when not connected");
+        }
+
+        GITObjRef scope(m_gitEntry);
+
+        Variant vRes;
+
+        if (!scope.GetProp(&vRes, dispid_tracking))
+        {
+            throw ERROR_INFO("ASCOM Scope: GetTracking() failed: " + ExcepMsg(scope.Excep()));
+        }
+
+        *tracking = vRes.bVal;
+    }
+    catch (const wxString& Msg)
+    {
+        bError = true;
+        POSSIBLY_UNUSED(Msg);
+    }
+
+    if (verbose)
+        Debug.Write(wxString::Format("ScopeASCOM::GetTracking() returns %s, tracking = %d\n", bError ? "error" : "success", bError ? 0 : *tracking));
+
+    return bError;
+}
+
+bool ScopeASCOM::SetTracking(bool tracking)
+{
+    bool bError = false;
+
+    try
+    {
+        if (!IsConnected())
+        {
+            throw ERROR_INFO("ASCOM Scope: cannot set tracking when not connected");
+        }
+
+        if (!m_canSetTracking)
+        {
+            throw THROW_INFO("!m_canSetTracking");
+        }
+
+        GITObjRef scope(m_gitEntry);
+
+        if (!scope.PutProp(dispid_tracking, tracking))
+        {
+            throw ERROR_INFO("ASCOM Scope: SetTracking() failed: " + ExcepMsg(scope.Excep()));
+        }
+    }
+    catch (const wxString& Msg)
+    {
+        bError = true;
+        POSSIBLY_UNUSED(Msg);
+    }
+
+    Debug.Write(wxString::Format("ScopeASCOM::SetTracking() returns %s (tracking = %d)\n", bError ? "error" : "success", tracking));
+
+    return bError;
+}
+
+bool ScopeASCOM::CanSetTracking()
+{
+    return m_canSetTracking;
 }
 
 // Return RA and Dec guide rates in native ASCOM units, degrees/sec.
