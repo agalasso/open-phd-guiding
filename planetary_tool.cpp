@@ -62,6 +62,13 @@ struct PlanetToolWin : public wxDialog
     wxSpinCtrlDouble* m_GainCtrl;
     wxChoice* m_BinningCtrl;
 
+    // Mount controls
+    enum DriveRates m_driveRate;
+    wxChoice* m_mountGuidingRate;
+    wxCheckBox* m_mountTrackigCheckBox;
+    Scope* m_prevPointingSource;
+    bool m_prevMountConnected;
+
     wxButton   *m_CloseButton;
     wxButton   *m_PauseButton;
     wxCheckBox *m_RoiCheckBox;
@@ -87,6 +94,9 @@ struct PlanetToolWin : public wxDialog
     void OnSpinCtrl_maxRadius(wxSpinDoubleEvent& event);
     void OnRoiModeClick(wxCommandEvent& event);
     void OnShowElementsClick(wxCommandEvent& event);
+    void OnMountTrackingClick(wxCommandEvent& event);
+    void OnMountTrackingRateClick(wxCommandEvent& event);
+    void OnTrackingRateMouseWheel(wxMouseEvent& event);
 
     void OnExposureChanged(wxSpinDoubleEvent& event);
     void OnDelayChanged(wxSpinDoubleEvent& event);
@@ -211,6 +221,23 @@ PlanetToolWin::PlanetToolWin()
     m_ShowElements->SetToolTip(_("Toggle the visibility of internally detected contour edges and adjust detection parameters to "
         "maintain a smooth contour closely aligned with the planetary limb."));
 
+    // Mount settings group
+    wxStaticBoxSizer* pMountGroup = new wxStaticBoxSizer(wxHORIZONTAL, this, _("Mount settings"));
+    wxFlexGridSizer* pMountTable = new wxFlexGridSizer(1, 6, 10, 10);
+    m_mountTrackigCheckBox = new wxCheckBox(this, wxID_ANY, _("Tracking"));
+    m_mountTrackigCheckBox->SetToolTip(_("Press and hold CTRL key to toggle mount tracking state"));
+    wxArrayString rates;
+    rates.Add(_("Sidereal"));
+    m_mountGuidingRate = new wxChoice(this, wxID_ANY, wxDefaultPosition, wxDefaultSize, rates);
+    m_mountGuidingRate->SetSelection(0);
+    m_mountTrackigCheckBox->Bind(wxEVT_CHECKBOX, &PlanetToolWin::OnMountTrackingClick, this);
+    m_mountGuidingRate->Bind(wxEVT_CHOICE, &PlanetToolWin::OnMountTrackingRateClick, this);
+    m_mountGuidingRate->Bind(wxEVT_MOUSEWHEEL, &PlanetToolWin::OnTrackingRateMouseWheel, this);
+
+    pMountTable->Add(m_mountTrackigCheckBox, 0, wxALL | wxALIGN_CENTER_VERTICAL, 10);
+    AddTableEntryPair(this, pMountTable, _("Tracking rate"), m_mountGuidingRate, _("Select the desired tracking rate for the mount"));
+    pMountGroup->Add(pMountTable);
+
     // Camera settings group
     wxStaticBoxSizer* pCamGroup = new wxStaticBoxSizer(wxVERTICAL, this, _("Camera settings"));
     wxBoxSizer* pCamSizer1 = new wxBoxSizer(wxHORIZONTAL);
@@ -257,6 +284,7 @@ PlanetToolWin::PlanetToolWin()
     topSizer->AddSpacer(5);
     topSizer->Add(m_ShowElements, 0, wxLEFT | wxALIGN_LEFT, 20);
     topSizer->AddSpacer(5);
+    topSizer->Add(pMountGroup, 0, wxEXPAND | wxALL, 5);
     topSizer->Add(pCamGroup, 0, wxEXPAND | wxALL, 5);
     topSizer->Add(ButtonSizer, 0, wxALL | wxALIGN_CENTER_HORIZONTAL, 5);
 
@@ -295,6 +323,9 @@ PlanetToolWin::PlanetToolWin()
     m_PauseButton->SetLabel(pPlanet->GetDetectionPausedState() ? _("Resume") : _("Pause"));
 
     // Update mount states
+    m_driveRate = (enum DriveRates) -1;
+    m_prevPointingSource = nullptr;
+    m_prevMountConnected = false;
     wxTimerEvent dummyEvent;
     OnPlanetaryTimer(dummyEvent);
 
@@ -431,9 +462,32 @@ void PlanetToolWin::OnShowElementsClick(wxCommandEvent& event)
     pFrame->pGuider->Update();
 }
 
+// Allow changing tracking state only when CTRL key is pressed
+void PlanetToolWin::OnMountTrackingClick(wxCommandEvent& event)
+{
+    bool tracking = m_mountTrackigCheckBox->IsChecked();
+
+    if (pPointingSource && pPointingSource->IsConnected())
+    {
+        if (wxGetKeyState(WXK_CONTROL))
+        {
+            pPointingSource->SetTracking(tracking);
+        }
+        pPointingSource->GetTracking(&tracking);
+    }
+    else
+    {
+        tracking = false;
+    }
+    m_mountTrackigCheckBox->SetValue(tracking);
+}
+
 // Called once in a while to update the UI controls
 void PlanetToolWin::OnPlanetaryTimer(wxTimerEvent& event)
 {
+    enum DriveRates driveRate = driveSidereal;
+    double raRate = 0, decRate = 0;
+    bool tracking = false;
     bool need_update = false;
 
     // Update pause button state to sync with guiding state
@@ -447,12 +501,151 @@ void PlanetToolWin::OnPlanetaryTimer(wxTimerEvent& event)
         pFrame->ClearAlert();
     }
 
+    if (pPointingSource && pPointingSource->IsConnected())
+    {
+        // Currently not supporting INDI mounts
+        if (pPointingSource->Name().StartsWith(_("INDI Mount")))
+        {
+            m_mountTrackigCheckBox->Enable(false);
+            m_mountGuidingRate->Enable(false);
+            return;
+        }
+        pPointingSource->GetTracking(&tracking);
+        pPointingSource->GetTrackingRate(&driveRate, &raRate, &decRate, false);
+        m_mountTrackigCheckBox->Enable(true);
+        m_mountGuidingRate->Enable(tracking);
+    }
+    else
+    {
+        m_mountTrackigCheckBox->Enable(false);
+        m_mountGuidingRate->Enable(false);
+    }
+    m_mountTrackigCheckBox->SetValue(tracking);
+
+    // Look for changes in the mount connection state
+    if (m_prevPointingSource != pPointingSource || (m_prevMountConnected != (pPointingSource && pPointingSource->IsConnected())))
+    {
+        m_mountGuidingRate->Clear();
+        if (pPointingSource && pPointingSource->IsConnected())
+        {
+            for (int i = 0; i < driveMaxRate; i++)
+            {
+                enum DriveRates driveRate = (enum DriveRates) i;
+                m_mountGuidingRate->Append(pPointingSource->m_mountRates[i].name);
+            }
+        }
+        need_update = true;
+    }
+    m_prevPointingSource = pPointingSource;
+    m_prevMountConnected = pPointingSource && pPointingSource->IsConnected();
+
+    // Iterate through the available rates in the m_mountGuidingRate combo box and select the current rate
+    int new_selection = -1;
+    wxString rateStr = wxEmptyString;
+    for (int i = 0; i < m_mountGuidingRate->GetCount(); i++)
+    {
+        rateStr = m_mountGuidingRate->GetString(i);
+        const double tolerance = 0.00001;
+        if ((rateStr == _("Sidereal") && driveRate == driveSidereal) ||
+            (rateStr == _("Lunar") && driveRate == driveLunar) ||
+            (rateStr == _("Solar") && driveRate == driveSolar) ||
+            ((rateStr == _("King") || rateStr == _("Custom")) && driveRate == driveKing))
+        {
+            // Special handling of EQMOD using RA/DEC offsets from SideReal rate
+            if (driveRate == driveSidereal)
+            {
+                // Check for lunar rate offset
+                if ((fabs(raRate - RA_LUNAR_RATE_OFFSET ) < tolerance) && (fabs(decRate) < tolerance))
+                {
+                    rateStr = _("Lunar");
+                    new_selection = driveRate = driveLunar;
+                    break;
+                }
+                // Check for solar rate offset
+                else if ((fabs(raRate - RA_SOLAR_RATE_OFFSET) < tolerance) && (fabs(decRate) < tolerance))
+                {
+                    rateStr = _("Solar");
+                    new_selection = driveRate = driveSolar;
+                    break;
+                }
+                else if ((fabs(raRate) > tolerance) || (fabs(decRate) > tolerance))
+                {
+                    rateStr = _("Custom");
+                    new_selection = driveRate = driveKing; // custom rate
+                    break;
+                }
+            }
+            new_selection = i;
+            break;
+        }
+    }
+    need_update |= (new_selection != m_driveRate);
+
+    if (((m_driveRate != driveRate) || need_update) && new_selection != -1)
+    {
+        Debug.Write(wxString::Format("Planetary tracking: mount tracking rate: %s\n", rateStr));
+        m_mountGuidingRate->SetSelection(new_selection);
+    }
+    m_driveRate = driveRate;
+
     // Update camera binning
     int localBinning = m_BinningCtrl->GetSelection();
     if (pCamera->Binning != localBinning + 1)
     {
         m_BinningCtrl->Select(pCamera->Binning - 1);
     }
+}
+
+void PlanetToolWin::OnMountTrackingRateClick(wxCommandEvent& event)
+{
+    enum DriveRates driveRate = driveSidereal;
+    if (pPointingSource && pPointingSource->IsConnected())
+    {
+        wxString rateStr = "Sidereal";
+        double ra_offset = 0.0;
+        int sel = m_mountGuidingRate->GetSelection();
+        if (sel != wxNOT_FOUND)
+        {
+            rateStr = m_mountGuidingRate->GetString(sel);
+            if (rateStr == _("Sidereal"))
+                driveRate = driveSidereal;
+            else if (rateStr == _("Lunar"))
+            {
+                driveRate = driveLunar;
+                ra_offset = RA_LUNAR_RATE_OFFSET;
+            }
+            else if (rateStr == _("Solar"))
+            {
+                driveRate = driveSolar;
+                ra_offset = RA_SOLAR_RATE_OFFSET;
+            }
+            else if (rateStr == _("King") || rateStr == _("Custom"))
+                driveRate = driveKing;
+        }
+
+        Debug.Write(wxString::Format("Planetary tracking: setting mount tracking rate to %s\n", rateStr));
+        if (pPointingSource->m_mountRates[driveRate].canSet)
+        {
+            pPointingSource->SetTrackingRate(driveRate);
+            m_driveRate = driveRate;
+        }
+        else
+        {
+            m_mountGuidingRate->SetSelection((int) driveRate);
+        }
+
+        // Set custom rate offsets for EQMOD mounts
+        if (pPointingSource->Name().StartsWith(_("EQMOD ASCOM")))
+        {
+            Debug.Write(wxString::Format("Planetary tracking: setting RA tracking offset %.6f for EQMOD ASCOM\n", ra_offset));
+            pPointingSource->SetTrackingRateOffsets(ra_offset, 0);
+        }
+    }
+}
+
+void PlanetToolWin::OnTrackingRateMouseWheel(wxMouseEvent& event)
+{
+    // Do nothing here - we don't want to change the tracking rate with the mouse wheel
 }
 
 void PlanetToolWin::OnExposureChanged(wxSpinDoubleEvent& event)
