@@ -165,6 +165,46 @@ public:
     void SetFocalLength(int val);
 };
 
+// NOTE: Custom Workaround for Toolbar Sync
+// ------------------------------------------------------------------------
+// This derived wxAuiToolBarExt class includes methods to access private
+// data of wxAuiToolBar. These methods are used to manually sync the
+// toolbar's pane info (wxAuiPaneInfo) in scenarios where the default
+// wxWidgets behavior does not suffice (e.g., syncing toolbar layout after
+// dynamic changes).
+//
+// This workaround is currently necessary due to the longstanding use of
+// wxWidgets 3.0.5 in PHD2 and its specific UI requirements. If updating
+// wxWidgets or adjusting UI implementation, consider removing or
+// updating this custom extension.
+// ------------------------------------------------------------------------
+class wxAuiToolBarExt : public wxAuiToolBar
+{
+public:
+    wxAuiToolBarExt(wxWindow* parent, wxWindowID id = -1,
+        const wxPoint& position = wxDefaultPosition,
+        const wxSize& size = wxDefaultSize,
+        long style = wxAUI_TB_DEFAULT_STYLE)
+        : wxAuiToolBar(parent, id, position, size, style) {}
+
+    wxSize GetAbsoluteMinSize() const
+    {
+        return m_absoluteMinSize;
+    }
+
+    int GetToolPanes() const
+    {   // iterate over m_items and count the number of tool panes
+        int count = 0;
+        for (size_t i = 0; i < m_items.GetCount(); i++)
+        {
+            wxAuiToolBarItem& item = m_items.Item(i);
+            if (item.GetKind() != wxITEM_SEPARATOR)
+                count++;
+        }
+        return count;
+    }
+};
+
 class MyFrame : public wxFrame
 {
 protected:
@@ -233,7 +273,7 @@ public:
     wxMenuItem *m_calibrationMenuItem;
     wxMenuItem *m_importCamCalMenuItem;
     wxMenuItem *m_upgradeMenuItem;
-    wxAuiToolBar *MainToolbar;
+    wxAuiToolBarExt *MainToolbar;
     wxInfoBar *m_infoBar;
     wxComboBox    *Dur_Choice;
     wxCheckBox *HotPixel_Checkbox;

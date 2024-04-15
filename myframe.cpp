@@ -444,6 +444,12 @@ MyFrame::MyFrame()
     pTarget->SetState(panel_state);
     Menubar->Check(MENU_TARGET, panel_state);
 
+    // update MainToolbar size to reflect its actual dimensions
+    wxAuiPaneInfo& MenubarInfo = m_mgr.GetPane(_T("MainToolBar"));
+    MenubarInfo.Layer(MainToolbar->GetToolPanes());
+    MenubarInfo.BestSize(MainToolbar->GetAbsoluteMinSize());
+
+    // update panes based on current panes state
     m_mgr.Update();
 
     // this forces force a resize of MainToolbar in case size changed from the saved perspective
@@ -961,7 +967,7 @@ void MyFrame::LoadProfileSettings()
 
 void MyFrame::SetupToolBar()
 {
-    MainToolbar = new wxAuiToolBar(this, -1, wxDefaultPosition, wxDefaultSize, wxAUI_TB_DEFAULT_STYLE);
+    MainToolbar = new wxAuiToolBarExt(this, -1, wxDefaultPosition, wxDefaultSize, wxAUI_TB_DEFAULT_STYLE);
 
 #   include "icons/loop.png.h"
     wxBitmap loop_bmp(wxBITMAP_PNG_FROM_DATA(loop));
