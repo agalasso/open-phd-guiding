@@ -271,6 +271,9 @@ bool GuiderPlanet::UpdateCaptureState(bool CaptureActive)
 // Notification callback when camera is connected/disconnected
 void GuiderPlanet::NotifyCameraConnect(bool connected)
 {
+    bool isSimCam = (pCamera && pCamera->Name == "Simulator");
+    pFrame->pStatsWin->ShowSimulatorStats(isSimCam && connected);
+    pFrame->pStatsWin->ShowPlanetStats(GetPlanetaryEnableState() && connected);
     m_roiClicked = false;
 }
 
@@ -748,6 +751,7 @@ bool GuiderPlanet::FindPlanetCenter(Mat img8, int minRadius, int maxRadius, bool
         Debug.Write(wxString::Format("Too many contour points detected (%d)\n", totalPoints));
         m_statusMsg = _("Too many contour points detected. Please apply pixel binning, enable ROI, or increase the Edge Detection Threshold.");
         pFrame->Alert(m_statusMsg, wxICON_WARNING);
+        pFrame->pStatsWin->UpdatePlanetFeatureCount(_T("Contour points"), totalPoints);
         return false;
     }
 
@@ -821,6 +825,10 @@ bool GuiderPlanet::FindPlanetCenter(Mat img8, int minRadius, int maxRadius, bool
     pFrame->pStatsWin->UpdatePlanetFeatureCount(_T("Contours/points"), contourMatchingCount, bestContour.size());
     pFrame->pStatsWin->UpdatePlanetScore(("Fitting score"), bestScore);
 
+    // Update stats window
+    pFrame->pStatsWin->UpdatePlanetFeatureCount(_T("Contours/points"), contourMatchingCount, bestContour.size());
+    pFrame->pStatsWin->UpdatePlanetScore(("Fitting score"), bestScore);
+
     // Create wxImage from the OpenCV Mat to be presented as
     // a visual aid for tuning of the edge threshold parameters.
     if (GetPlanetaryElementsVisual())
@@ -865,9 +873,13 @@ void GuiderPlanet::UpdateDetectionErrorInSimulator(Point2f& clickedPoint)
             else if (!m_simulationZeroOffset && !clicked)
             {
                 Point2f delta = Point2f(m_center_x, m_center_y) - m_origPoint;
+                pFrame->pStatsWin->UpdatePlanetError(_T("Detection error"), norm(delta - (m_cameraSimulationMove - m_cameraSimulationRefPoint)));
                 errUnknown = false;
             }
         }
+
+        if (errUnknown)
+            pFrame->pStatsWin->UpdatePlanetError(_T("Detection error"), -1);
 
         if (clicked)
         {
@@ -975,6 +987,9 @@ bool GuiderPlanet::FindPlanet(const usImage* pImage, bool autoSelect)
         // Calculate sharpness of the image
         if (m_measuringSharpnessMode)
             m_focusSharpness = CalcSharpness(FullFrame, clickedPoint, detectionResult);
+
+        // Update detection time stats
+        pFrame->pStatsWin->UpdatePlanetDetectionTime(m_PlanetWatchdog.Time());
 
         if (detectionResult)
         {

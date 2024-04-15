@@ -131,6 +131,43 @@ StatsWindow::StatsWindow(wxWindow *parent)
     m_grid2->ClearSelection();
     m_grid2->DisableDragGridSize();
 
+    // Planetary detection stats
+    const int grid3Rows = 4;
+    m_grid3 = new wxGrid(this, wxID_ANY);
+    m_grid3->CreateGrid(grid3Rows, 2);
+    m_grid3->SetRowLabelSize(1);
+    m_grid3->SetColLabelSize(1);
+    m_grid3->EnableEditing(false);
+    m_grid3->SetDefaultCellBackgroundColour(*wxBLACK);
+    m_grid3->SetDefaultCellTextColour(*wxLIGHT_GREY);
+    m_grid3->SetGridLineColour(wxColour(40, 40, 40));
+
+    row = 0, col = 0;
+    m_grid3->SetCellValue(row, col++, _("Detection time"));
+    m_grid3->SetCellValue(row, col, _("000000 ms"));
+    ++row, col = 0;
+    m_grid3->SetCellValue(row, col++, _("Contours/points"));
+    m_grid3->SetCellValue(row, col, _("9999/9999"));
+    ++row, col = 0;
+    m_grid3->SetCellValue(row, col++, _("Fitting score"));
+    m_grid3->SetCellValue(row, col, _("1.00"));
+    ++row, col = 0;
+    m_grid3->SetCellValue(row, col++, _("Detection error"));
+    m_grid3->SetCellValue(row, col, _("9999999"));
+    m_grid3->AutoSize();
+
+    m_grid3->SetCellValue(0, 1, wxEmptyString);
+    m_grid3->SetCellValue(1, 0, wxEmptyString);
+    m_grid3->SetCellValue(1, 1, wxEmptyString);
+    m_grid3->SetCellValue(2, 0, wxEmptyString);
+    m_grid3->SetCellValue(2, 1, wxEmptyString);
+    m_grid3->SetCellValue(3, 0, wxEmptyString);
+    m_grid3->SetCellValue(3, 1, wxEmptyString);
+    m_grid3->ClearSelection();
+    m_grid3->DisableDragGridSize();
+    m_grid3->HideRow(3);
+    ShowPlanetStats(false);
+
     wxSizer *sizer1 = new wxBoxSizer(wxHORIZONTAL);
 
     wxButton *clearButton = new wxButton(this, BUTTON_GRAPH_CLEAR, _("Clear"));
@@ -149,6 +186,7 @@ StatsWindow::StatsWindow(wxWindow *parent)
     sizer2->Add(sizer1, 0, wxEXPAND, 10);
     sizer2->Add(m_grid1, wxSizerFlags(0).Border(wxALL, 10));
     sizer2->Add(m_grid2, wxSizerFlags(0).Border(wxALL, 10));
+    sizer2->Add(m_grid3, wxSizerFlags(0).Border(wxALL, 10));
 
     SetSizerAndFit(sizer2);
 }
@@ -293,6 +331,78 @@ void StatsWindow::ResetImageSize()
     m_grid2->SetCellValue(m_frameSizeRow, 1, wxEmptyString);
     m_grid2->SetCellValue(m_pixelScaleRow, 1, wxEmptyString);
     m_grid2->SetCellValue(m_pixelScaleRow + 1, 1, wxEmptyString);
+}
+
+void StatsWindow::ClearPlanetStats()
+{
+    m_grid3->SetCellValue(0, 1, wxEmptyString);
+    m_grid3->SetCellValue(1, 0, wxEmptyString);
+    m_grid3->SetCellValue(1, 1, wxEmptyString);
+    m_grid3->SetCellValue(2, 0, wxEmptyString);
+    m_grid3->SetCellValue(2, 1, wxEmptyString);
+    m_grid3->SetCellValue(3, 0, wxEmptyString);
+    m_grid3->SetCellValue(3, 1, wxEmptyString);
+}
+
+void StatsWindow::ShowPlanetStats(bool show)
+{
+    if (show)
+        m_grid3->Show();
+    else
+        m_grid3->Hide();
+    Layout();
+}
+
+void StatsWindow::ShowSimulatorStats(bool show)
+{
+    if (show)
+        m_grid3->ShowRow(3);
+    else
+        m_grid3->HideRow(3);
+}
+
+void StatsWindow::UpdatePlanetDetectionTime(int msec)
+{
+    wxString timeStr = wxString::Format(_T("%d ms"), msec);
+    m_grid3->SetCellValue(0, 1, timeStr);
+}
+
+void StatsWindow::UpdatePlanetFeatureCount(wxString label, int count)
+{
+    wxString valueStr = wxString::Format(_T("%d"), count);
+    m_grid3->SetCellValue(1, 0, label);
+    m_grid3->SetCellValue(1, 1, valueStr);
+}
+
+void StatsWindow::UpdatePlanetFeatureCount(wxString label, int count1, int count2)
+{
+    wxString valueStr = wxString::Format(_T("%d/%d"), count1, count2);
+    m_grid3->SetCellValue(1, 0, label);
+    m_grid3->SetCellValue(1, 1, valueStr);
+}
+
+void StatsWindow::UpdatePlanetScore(wxString label, float score)
+{
+    if (label == wxEmptyString)
+    {
+        m_grid3->SetCellValue(2, 0, wxEmptyString);
+        m_grid3->SetCellValue(2, 1, wxEmptyString);
+    }
+    else
+    {
+        m_grid3->SetCellValue(2, 0, label);
+        m_grid3->SetCellValue(2, 1, wxString::Format(_T("%.2f"), score));
+    }
+}
+
+void StatsWindow::UpdatePlanetError(wxString label, float error)
+{
+    if (pCamera && pCamera->Name == "Simulator")
+    {
+        wxString valueStr = error >= 0 ? wxString::Format(_T("%.2f px"), error) : _("loading");
+        m_grid3->SetCellValue(3, 0, label);
+        m_grid3->SetCellValue(3, 1, valueStr);
+    }
 }
 
 void StatsWindow::OnTimerCooler(wxTimerEvent&)

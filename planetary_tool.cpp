@@ -394,6 +394,7 @@ void PlanetToolWin::OnEnableToggled(wxCommandEvent& event)
     }
 
     // Update elements display state
+    pFrame->pStatsWin->ClearPlanetStats();
     OnShowElementsClick(event);
 }
 
@@ -512,6 +513,9 @@ void PlanetToolWin::UpdateStatus()
 
     // Update tabs state
     m_planetTab->Enable(true);
+
+    // Toggle the visibility of planetary stats grid
+    pFrame->pStatsWin->ShowPlanetStats(enabled);
 
     // Pause planetary guiding can be enabled only when guiding is still active
     m_PauseButton->Enable(enabled && pFrame->pGuider->IsGuiding());
