@@ -213,6 +213,7 @@ struct FileDropTarget : public wxFileDropTarget
 MyFrame::MyFrame()
     :
     wxFrame(nullptr, wxID_ANY, wxEmptyString),
+    pGuider(nullptr),
     pPlanetTool(nullptr),
     m_showBookmarksAccel(0),
     m_bookmarkLockPosAccel(0),
@@ -373,6 +374,7 @@ MyFrame::MyFrame()
     pierFlipToolWin = nullptr;
     m_starFindMode = Star::FIND_CENTROID;
     m_StarFindMode_Saved = m_starFindMode;
+    m_StopReason = wxEmptyString;
     m_rawImageMode = false;
     m_rawImageModeWarningDone = false;
 

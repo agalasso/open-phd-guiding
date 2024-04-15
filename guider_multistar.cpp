@@ -14,6 +14,8 @@
  *  Copyright (c) 2020 Bruce Waddington
  *  All rights reserved.
  *
+ *  Planetary detection extensions by Leo Shatz
+ *
  *  This source code is distributed under the following "BSD" license
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -394,7 +396,8 @@ bool GuiderMultiStar::SetCurrentPosition(const usImage *pImage, const PHD_Point&
         }
 
         m_massChecker->Reset();
-        bError = !m_primaryStar.Find(pImage, m_searchRegion, x, y, pFrame->GetStarFindMode(),
+        int searchRegion = (pFrame->GetStarFindMode() == Star::FIND_PLANET) ? m_Planet.m_searchRegion : m_searchRegion;
+        bError = !m_primaryStar.Find(pImage, searchRegion, x, y, pFrame->GetStarFindMode(),
                               GetMinStarHFD(), GetMaxStarHFD(), pCamera->GetSaturationADU(), Star::FIND_LOGGING_VERBOSE);
     }
     catch (const wxString& Msg)
@@ -470,14 +473,35 @@ bool GuiderMultiStar::AutoSelect(const wxRect& roi)
             edgeAllowance = wxMax(edgeAllowance, pSecondaryMount->CalibrationTotDistance());
 
         GuideStar newStar;
-        if (!newStar.AutoFind(*image, edgeAllowance, m_searchRegion, roi, m_guideStars, MAX_LIST_SIZE))
+        int searchRegion;
+        Star::FindMode findMode = pFrame->GetStarFindMode();
+
+        if (findMode == Star::FIND_PLANET)
         {
-            throw ERROR_INFO("Unable to AutoFind");
+            if (m_Planet.FindPlanet(image, true))
+            {
+                newStar.X = newStar.referencePoint.X = m_Planet.m_center_x;
+                newStar.Y = newStar.referencePoint.Y = m_Planet.m_center_y;
+                searchRegion = m_Planet.m_searchRegion;
+                m_guideStars.clear();
+                m_guideStars.push_back(newStar);
+            } else
+            {
+                throw ERROR_INFO("Unable to AutoFind");
+            }
+        } else
+        {
+            searchRegion = m_searchRegion;
+            findMode = Star::FIND_CENTROID;
+            if (!newStar.AutoFind(*image, edgeAllowance, m_searchRegion, roi, m_guideStars, MAX_LIST_SIZE))
+            {
+                throw ERROR_INFO("Unable to AutoFind");
+            }
         }
 
         m_massChecker->Reset();
 
-        if (!m_primaryStar.Find(image, m_searchRegion, newStar.X, newStar.Y, Star::FIND_CENTROID, GetMinStarHFD(), GetMaxStarHFD(),
+        if (!m_primaryStar.Find(image, searchRegion, newStar.X, newStar.Y, findMode, GetMinStarHFD(), GetMaxStarHFD(),
                          pCamera->GetSaturationADU(), Star::FIND_LOGGING_VERBOSE))
         {
             throw ERROR_INFO("Unable to find");
@@ -929,8 +953,26 @@ bool GuiderMultiStar::UpdateCurrentPosition(const usImage *pImage, GuiderOffset 
     try
     {
         Star newStar(m_primaryStar);
+        int search_region = m_searchRegion;
 
-        if (!newStar.Find(pImage, m_searchRegion, pFrame->GetStarFindMode(), GetMinStarHFD(),
+        if (pFrame->GetStarFindMode() == Star::FIND_PLANET)
+        {
+            if (!m_Planet.FindPlanet(pImage))
+            {
+                errorInfo->starError = newStar.GetError();
+                errorInfo->starMass = 0.0;
+                errorInfo->starSNR = 0.0;
+                errorInfo->starHFD = 0.0;
+                errorInfo->status = m_Planet.m_statusMsg;
+                throw ERROR_INFO("UpdateCurrentPosition():newStar not found");
+            }
+            double newpos_x = m_Planet.m_center_x;
+            double newpos_y = m_Planet.m_center_y;
+            newStar.SetXY(newpos_x, newpos_y);
+            search_region = m_Planet.m_searchRegion;
+        }
+
+        if (!newStar.Find(pImage, search_region, pFrame->GetStarFindMode(), GetMinStarHFD(),
             GetMaxStarHFD(), pCamera->GetSaturationADU(), Star::FIND_LOGGING_VERBOSE))
         {
             errorInfo->starError = newStar.GetError();
@@ -1035,6 +1077,14 @@ bool GuiderMultiStar::UpdateCurrentPosition(const usImage *pImage, GuiderOffset 
         pFrame->AdjustAutoExposure(m_primaryStar.SNR);
         pFrame->UpdateStatusBarStarInfo(m_primaryStar.SNR, m_primaryStar.GetError() == Star::STAR_SATURATED);
         errorInfo->status = StarStatus(m_primaryStar);
+
+        // Show planet position after successful detection
+        if ((GetState() != STATE_GUIDING) && (pFrame->GetStarFindMode() == Star::FIND_PLANET))
+        {
+            wxString statusMsg;
+            m_Planet.GetDetectionStatus(statusMsg);
+            pFrame->StatusMsg(statusMsg);
+        }
     }
     catch (const wxString& Msg)
     {
@@ -1131,9 +1181,40 @@ void GuiderMultiStar::OnLClick(wxMouseEvent &mevent)
                 throw ERROR_INFO("Skipping event m_pCurrentImage->NPixels == 0");
             }
 
-            double scaleFactor = ScaleFactor();
-            double StarX = (double) mevent.m_x / scaleFactor;
-            double StarY = (double) mevent.m_y / scaleFactor;
+            double StarX, StarY;
+
+            /* Set ROI to a square around clicked position */
+            if (pFrame->GetStarFindMode() == Star::FIND_PLANET)
+            {
+                int x = mevent.m_x / ScaleFactor();
+                m_Planet.m_clicked_x = std::min(x, pImage->Size.GetWidth() - 1);
+                int y = mevent.m_y / ScaleFactor();
+                m_Planet.m_clicked_y = std::min(y, pImage->Size.GetHeight() - 1);
+                m_Planet.m_roiClicked = true;
+                m_Planet.m_detectionCounter = 0;
+
+                if (m_Planet.GetRoiEnableState())
+                {
+                    // Set ROI centered around currently clicked point
+                    m_Planet.m_center_x = m_Planet.m_clicked_x;
+                    m_Planet.m_center_y = m_Planet.m_clicked_y;
+                }
+
+                // Try to locate a planet
+                m_Planet.FindPlanet((const usImage*)pImage);
+            }
+
+            if ((pFrame->GetStarFindMode() == Star::FIND_PLANET) && m_Planet.m_detected)
+            {
+                StarX = (double) m_Planet.m_center_x;
+                StarY = (double) m_Planet.m_center_y;
+            }
+            else
+            {
+                double scaleFactor = ScaleFactor();
+                StarX = (double) mevent.m_x / scaleFactor;
+                StarY = (double) mevent.m_y / scaleFactor;
+            }
 
             SetCurrentPosition(pImage, PHD_Point(StarX, StarY));
 
@@ -1151,13 +1232,19 @@ void GuiderMultiStar::OnLClick(wxMouseEvent &mevent)
                     m_guideStars.push_back(m_primaryStar);
                 }
                 Debug.Write("MultiStar: single-star usage forced by user star selection\n");
-                pFrame->StatusMsg(wxString::Format(_("Selected star at (%.1f, %.1f)"), m_primaryStar.X, m_primaryStar.Y));
+                if (pFrame->GetStarFindMode() == Star::FIND_PLANET)
+                    pFrame->StatusMsg(wxString::Format(_("Selected point at (%.1f, %.1f)"), m_primaryStar.X, m_primaryStar.Y));
+                else
+                    pFrame->StatusMsg(wxString::Format(_("Selected star at (%.1f, %.1f)"), m_primaryStar.X, m_primaryStar.Y));
                 pFrame->UpdateStatusBarStarInfo(m_primaryStar.SNR, m_primaryStar.GetError() == Star::STAR_SATURATED);
                 EvtServer.NotifyStarSelected(CurrentPosition());
                 SetState(STATE_SELECTED);
                 pFrame->UpdateButtonsStatus();
                 pFrame->pProfile->UpdateData(pImage, m_primaryStar.X, m_primaryStar.Y);
             }
+
+            if (pFrame->GetStarFindMode() == Star::FIND_PLANET)
+                m_Planet.m_draw_PlanetaryHelper = true;
 
             Refresh();
             Update();
@@ -1172,8 +1259,65 @@ void GuiderMultiStar::OnLClick(wxMouseEvent &mevent)
 inline static void DrawBox(wxDC& dc, const PHD_Point& star, int halfW, double scale)
 {
     dc.SetBrush(*wxTRANSPARENT_BRUSH);
+    halfW = (pFrame->GetStarFindMode() == Star::FIND_PLANET) ? 10 : halfW;
     double w = ROUND((halfW * 2 + 1) * scale);
-    dc.DrawRectangle(int((star.X - halfW) * scale), int((star.Y - halfW) * scale), w, w);
+    int xpos = int((star.X - halfW) * scale);
+    int ypos = int((star.Y - halfW) * scale);
+    if (pFrame->GetStarFindMode() == Star::FIND_PLANET)
+    {
+        // Clip drawing region to displayed image frame
+        wxImage* pImg = pFrame->pGuider->DisplayedImage();
+        if (pImg)
+            dc.SetClippingRegion(wxRect(0, 0, pImg->GetWidth(), pImg->GetHeight()));
+
+        Guider* pGuider = pFrame->pGuider;
+        if (pGuider->m_Planet.m_detected)
+        {
+            int x = int(star.X * scale + 0.5);
+            int y = int(star.Y * scale + 0.5);
+            int r = int(pGuider->m_Planet.m_radius * scale + 0.5);
+            dc.DrawCircle(x, y, r);
+            dc.SetPen(wxPen(dc.GetPen().GetColour(), 1, dc.GetPen().GetStyle()));
+            dc.DrawRectangle(xpos, ypos, w, w);
+        }
+
+        // Replaces visual bell for paused detection while guiding
+        if (pGuider->m_Planet.GetDetectionPausedState())
+        {
+            static int dash = 0;
+            static wxDash dashPattern[4][4] =
+            {  /* d  g  d  g */
+                { 4, 2, 4, 2 },
+                { 4, 3, 4, 3 },
+                { 4, 4, 4, 4 },
+                { 4, 3, 4, 3 },
+            };
+
+            // Create a pen with the custom dash pattern
+            dash = (dash + 1) % 4;
+            wxPen pen(wxColour(230, 30, 30), 4, wxPENSTYLE_USER_DASH);
+            pen.SetDashes(4, dashPattern[dash]);
+            dc.SetPen(pen);
+
+            int x = int(star.X * scale + 0.5);
+            int y = int(star.Y * scale + 0.5);
+            int r = int(pGuider->m_Planet.m_radius * scale + 0.5);
+            dc.DrawCircle(x, y, r);
+        }
+
+        // Show active processing region
+        if (pGuider->m_Planet.m_roiActive && pFrame->CaptureActive)
+        {
+            dc.SetPen(wxPen(wxColour(200, 200, 200), 2, wxPENSTYLE_SHORT_DASH));
+            dc.DrawRectangle(pGuider->m_Planet.m_roiRect.x * scale, pGuider->m_Planet.m_roiRect.y * scale, pGuider->m_Planet.m_roiRect.width * scale, pGuider->m_Planet.m_roiRect.height * scale);
+        }
+
+        dc.DestroyClippingRegion();
+    }
+    else
+    {
+        dc.DrawRectangle(xpos, ypos, w, w);
+    }
 }
 
 // Define the repainting behaviour
@@ -1238,29 +1382,33 @@ void GuiderMultiStar::OnPaint(wxPaintEvent& event)
         GUIDER_STATE state = GetState();
         bool FoundStar = m_primaryStar.WasFound();
 
+        int thickness = pFrame->GetStarFindMode() == Star::FIND_PLANET ? 4 : 1;
         if (state == STATE_SELECTED)
         {
             if (FoundStar)
-                dc.SetPen(wxPen(wxColour(100,255,90), 1, wxPENSTYLE_SOLID));  // Draw the box around the star
+                dc.SetPen(wxPen(wxColour(100,255,90), thickness, wxPENSTYLE_SOLID));  // Draw the box around the star
             else
-                dc.SetPen(wxPen(wxColour(230,130,30), 1, wxPENSTYLE_DOT));
+                dc.SetPen(wxPen(wxColour(230,130,30), thickness, wxPENSTYLE_DOT));
             DrawBox(dc, m_primaryStar, m_searchRegion, m_scaleFactor);
         }
         else if (state == STATE_CALIBRATING_PRIMARY || state == STATE_CALIBRATING_SECONDARY)
         {
             // in the calibration process
-            dc.SetPen(wxPen(wxColour(32,196,32), 1, wxPENSTYLE_SOLID));  // Draw the box around the star
+            dc.SetPen(wxPen(wxColour(32,196,32), thickness, wxPENSTYLE_SOLID));  // Draw the box around the star
             DrawBox(dc, m_primaryStar, m_searchRegion, m_scaleFactor);
         }
         else if (state == STATE_CALIBRATED || state == STATE_GUIDING)
         {
             // locked and guiding
             if (FoundStar)
-                dc.SetPen(wxPen(wxColour(32,196,32), 1, wxPENSTYLE_SOLID));  // Draw the box around the star
+                dc.SetPen(wxPen(wxColour(32,196,32), thickness, wxPENSTYLE_SOLID));  // Draw the box around the star
             else
-                dc.SetPen(wxPen(wxColour(230,130,30), 1, wxPENSTYLE_DOT));
+                dc.SetPen(wxPen(wxColour(230,130,30), thickness, wxPENSTYLE_DOT));
             DrawBox(dc, m_primaryStar, m_searchRegion, m_scaleFactor);
         }
+
+        if (m_Planet.GetPlanetaryEnableState() && (m_Planet.m_draw_PlanetaryHelper || m_Planet.GetPlanetaryElementsVisual()))
+            m_Planet.PlanetVisualHelper(dc, m_primaryStar, m_scaleFactor);
     }
     catch (const wxString& Msg)
     {

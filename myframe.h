@@ -308,6 +308,8 @@ public:
     wxStopWatch m_guidingElapsed;
     Star::FindMode m_starFindMode;
     Star::FindMode m_StarFindMode_Saved;
+    wxString m_StopReason;
+
     double m_minStarHFD;
     bool m_rawImageMode;
     bool m_rawImageModeWarningDone;

@@ -413,7 +413,13 @@ void MyFrame::FinishStop(void)
     pGuider->ForceFullFrame();
     ResetAutoExposure();
     UpdateButtonsStatus();
-    StatusMsg(_("Stopped."));
+    if (m_StopReason.IsEmpty())
+        StatusMsg(_("Stopped."));
+    else
+    {
+        StatusMsg(m_StopReason);
+        m_StopReason = wxEmptyString;
+    }
     PhdController::AbortController("Stopped capturing");
 }
 
