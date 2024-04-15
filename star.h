@@ -47,6 +47,7 @@ public:
     {
         FIND_CENTROID,
         FIND_PEAK,
+        FIND_PLANET
     };
 
     enum FindResult
@@ -81,7 +82,7 @@ public:
      *       error
      */
     bool Find(const usImage *pImg, int searchRegion, FindMode mode, double min_hfd, double max_hfd, unsigned short saturation, StarFindLogType loggingControl);
-    bool Find(const usImage *pImg, int searchRegion, int X, int Y, FindMode mode, double min_hfd, double max_hfd, unsigned short saturation, StarFindLogType loggingControl);
+    bool Find(const usImage *pImg, int searchRegion, double X, double Y, FindMode mode, double min_hfd, double max_hfd, unsigned short saturation, StarFindLogType loggingControl);
 
     static bool WasFound(FindResult result);
     bool WasFound() const;

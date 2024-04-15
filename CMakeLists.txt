@@ -324,6 +324,8 @@ set(guiding_SRC
   ${phd_src_dir}/guide_algorithms.h
   ${phd_src_dir}/guider_multistar.cpp
   ${phd_src_dir}/guider_multistar.h
+  ${phd_src_dir}/guider_planetary.cpp
+  ${phd_src_dir}/guider_planetary.h
   ${phd_src_dir}/guider.cpp
   ${phd_src_dir}/guider.h
   ${phd_src_dir}/guiders.h
@@ -425,6 +427,8 @@ set(phd2_SRC
   ${phd_src_dir}/phdupdate.h
   ${phd_src_dir}/pierflip_tool.cpp
   ${phd_src_dir}/pierflip_tool.h
+  ${phd_src_dir}/planetary_tool.cpp
+  ${phd_src_dir}/planetary_tool.h
   ${phd_src_dir}/polardrift_tool.h
   ${phd_src_dir}/polardrift_toolwin.h
   ${phd_src_dir}/polardrift_toolwin.cpp

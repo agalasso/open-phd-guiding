@@ -178,11 +178,13 @@ protected:
     int GetTimeLapse() const;
     int GetExposureDelay();
 
+    wxMutex eventLock;
     bool SetFocalLength(int focalLength);
 
     friend class MyFrameConfigDialogPane;
     friend class MyFrameConfigDialogCtrlSet;
     friend class WorkerThread;
+    friend class PlanetToolWin;
 
 private:
 
@@ -224,6 +226,7 @@ public:
     wxMenuItem *m_cameraMenuItem;
     wxMenuItem *m_autoSelectStarMenuItem;
     wxMenuItem *m_takeDarksMenuItem;
+    wxMenuItem *m_PlanetaryMenuItem;
     wxMenuItem *m_useDarksMenuItem;
     wxMenuItem *m_refineDefMapMenuItem;
     wxMenuItem *m_useDefectMapMenuItem;
@@ -250,6 +253,7 @@ public:
     wxDialog *pStarCrossDlg;
     wxWindow *pNudgeLock;
     wxWindow *pCometTool;
+    wxWindow *pPlanetTool;
     wxWindow *pGuidingAssistant;
     wxWindow *pierFlipToolWin;
     RefineDefMap *pRefineDefMap;
@@ -263,6 +267,7 @@ public:
     wxDateTime m_guidingStarted;
     wxStopWatch m_guidingElapsed;
     Star::FindMode m_starFindMode;
+    Star::FindMode m_StarFindMode_Saved;
     double m_minStarHFD;
     bool m_rawImageMode;
     bool m_rawImageModeWarningDone;
@@ -306,6 +311,7 @@ public:
     void OnStaticPaTool(wxCommandEvent& evt);
     void OnCalibrationAssistant(wxCommandEvent& evt);
     void OnCometTool(wxCommandEvent& evt);
+    void OnPlanetTool(wxCommandEvent& evt);
     void OnGuidingAssistant(wxCommandEvent& evt);
     void OnSetupCamera(wxCommandEvent& evt);
     void OnExposureDurationSelected(wxCommandEvent& evt);
@@ -350,8 +356,8 @@ public:
 
     const std::vector<int>& GetExposureDurations() const;
     bool SetCustomExposureDuration(int ms);
-    void GetExposureInfo(int *currExpMs, bool *autoExp) const;
-    bool SetExposureDuration(int val);
+    bool GetExposureInfo(int *currExpMs, bool *autoExp) const;
+    bool SetExposureDuration(int val, bool updateCustom = false);
     const AutoExposureCfg& GetAutoExposureCfg() const { return m_autoExp; }
     bool SetAutoExposureCfg(int minExp, int maxExp, double targetSNR);
     void ResetAutoExposure();
@@ -366,6 +372,9 @@ public:
     static double GetDitherAmount(int ditherType);
     Star::FindMode GetStarFindMode() const;
     Star::FindMode SetStarFindMode(Star::FindMode mode);
+    void SaveStarFindMode();
+    void RestoreStarFindMode();
+
     bool GetRawImageMode() const;
     bool SetRawImageMode(bool force);
 
@@ -430,6 +439,7 @@ public:
 
     void NotifyUpdateButtonsStatus(); // can be called from any thread
     void UpdateButtonsStatus();
+    void UpdateCameraSettings();
 
     static double GetPixelScale(double pixelSizeMicrons, int focalLengthMm, int binning);
     double GetCameraPixelScale() const;
@@ -546,6 +556,7 @@ enum {
     BUTTON_AUTOSTAR,
     BUTTON_DURATION,
     BUTTON_ADVANCED,
+    BUTTON_PLANETARY,
     BUTTON_CAM_PROPERTIES,
     BUTTON_ALERT_ACTION,
     BUTTON_ALERT_CLOSE,
@@ -632,6 +643,7 @@ enum {
     MENU_POLARDRIFTTOOL,
     MENU_STATICPATOOL,
     MENU_COMETTOOL,
+    MENU_PLANETARY,
     MENU_GUIDING_ASSISTANT,
     MENU_SAVESETTINGS,
     MENU_LOADSETTINGS,

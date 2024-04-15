@@ -123,16 +123,16 @@ static double hfr(std::vector<R2M>& vec, double cx, double cy, double mass)
     return hfr;
 }
 
-bool Star::Find(const usImage *pImg, int searchRegion, int base_x, int base_y, FindMode mode, double minHFD, double maxHFD, unsigned short maxADU, StarFindLogType loggingControl)
+bool Star::Find(const usImage *pImg, int searchRegion, double base_x, double base_y, FindMode mode, double minHFD, double maxHFD, unsigned short maxADU, StarFindLogType loggingControl)
 {
     FindResult Result = STAR_OK;
-    double newX = base_x;
-    double newY = base_y;
+    double newX = (int) base_x;
+    double newY = (int) base_y;
 
     try
     {
         if (loggingControl == FIND_LOGGING_VERBOSE)
-            Debug.Write(wxString::Format("Star::Find(%d, %d, %d, %d, (%d,%d,%d,%d), %.1f, %0.1f, %hu) frame %u\n", searchRegion, base_x, base_y, mode,
+            Debug.Write(wxString::Format("Star::Find(%d, %.2f, %.2f, %d, (%d,%d,%d,%d), %.1f, %0.1f, %hu) frame %u\n", searchRegion, base_x, base_y, mode,
             pImg->Subframe.x, pImg->Subframe.y, pImg->Subframe.width, pImg->Subframe.height, minHFD, maxHFD, maxADU, pImg->FrameNum));
 
         int minx, miny, maxx, maxy;
@@ -188,7 +188,7 @@ bool Star::Find(const usImage *pImg, int searchRegion, int base_x, int base_y, F
 
             PeakVal = peak_val;
         }
-        else
+        else if (mode == FIND_CENTROID)
         {
             // find the peak value within the search region using a smoothing function
             // also check for saturation
@@ -227,6 +227,11 @@ bool Star::Find(const usImage *pImg, int searchRegion, int base_x, int base_y, F
 
             PeakVal = max3[0];   // raw peak val
             peak_val /= 16; // smoothed peak value
+        }
+        else // FIND_PLANET
+        {
+            Result = STAR_ERROR;
+            goto done;
         }
 
         // measure noise in the annulus with inner radius A and outer radius B
