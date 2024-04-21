@@ -341,7 +341,7 @@ bool StepGuiderSxAO::SendLongCommand(unsigned char command, unsigned char parame
         // C99 snprintf returns the number of characters that the formatted string takes whether there was enough space in the buffer or not
         int ret = snprintf((char *)&cmdBuf[0], bufsize, "%c%c%5.5d", command, parameter, count);
 #endif
-        
+
         if (ret < 0)
         {
             throw ERROR_INFO("StepGuiderSxAO::SendLongCommand snprintf failed");

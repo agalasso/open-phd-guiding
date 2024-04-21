@@ -123,16 +123,114 @@ static double hfr(std::vector<R2M>& vec, double cx, double cy, double mass)
     return hfr;
 }
 
-bool Star::Find(const usImage *pImg, int searchRegion, int base_x, int base_y, FindMode mode, double minHFD, double maxHFD, unsigned short maxADU, StarFindLogType loggingControl)
+double Star::CalcPlanetMetrics(const usImage* pImg, int center_x, int center_y, int r, int annulusWidth)
+{
+    const double sigma_factor = 1.0;
+    int scopeOuter = r + annulusWidth * 3;
+    int scopeInner = r + annulusWidth;
+    int scopeOuter2 = scopeOuter * scopeOuter;
+    int scopeInner2 = scopeInner * scopeInner;
+    int start_x = wxMax(0, center_x - scopeOuter);
+    int end_x = wxMin(center_x + scopeOuter, pImg->Size.GetWidth() - 1);
+    int start_y = wxMax(0, center_y - scopeOuter);
+    int end_y = wxMin(center_y + scopeOuter, pImg->Size.GetHeight() - 1);
+
+    const unsigned short* imgdata = pImg->ImageData;
+    const int rowsize = pImg->Size.GetWidth();
+
+    // Calculate the statistics within the larger annulus
+    double snr = 0.0;
+    double mass = 0;
+    double sum = 0.0;
+    double sq_sum = 0.0;
+    int count = 0;
+    const unsigned short* row = imgdata + rowsize * start_y;
+    for (int y = start_y; y <= end_y; y++, row += rowsize)
+    {
+        for (int x = start_x; x <= end_x; x++)
+        {
+            int r2 = (x - center_x) * (x - center_x) + (y - center_y) * (y - center_y);
+            if ((r2 < scopeOuter2) && (r2 > scopeInner2))
+            {
+                double pixel = (double) row[x];
+                sum += pixel;
+                sq_sum += pixel * pixel;
+                count++;
+            }
+        }
+    }
+
+    // Calculate mean, variance and standard deviation in the annulus
+    double mean = (count > 0) ? sum / count : 0.0;
+    double variance = (count > 0) ? (sq_sum / count) - (mean * mean) : 0.0;
+    double stdDev = sqrt(variance);
+    int signalThreshold = mean + stdDev * sigma_factor;
+
+    // Calculate signal and noise within the circle
+    unsigned short peak_val = 0;
+    double meanSignal = 0.0;
+    int signalCount = 0;
+    double meanNoise = 0.0;
+    int noiseCount = 0;
+    double noiseVariance = 0.0;
+    row = imgdata + rowsize * start_y;
+    for (int y = start_y; y <= end_y; y++, row += rowsize)
+    {
+        for (int x = start_x; x <= end_x; x++)
+        {
+            int r2 = (x - center_x) * (x - center_x) + (y - center_y) * (y - center_y);
+            if (r2 < scopeInner2)
+            {
+                double pixel = (double) row[x];
+                if (pixel > peak_val)
+                    peak_val = pixel;
+                if (pixel > signalThreshold)
+                {
+                    meanSignal += pixel;
+                    signalCount++;
+                }
+            }
+            else if (r2 < scopeOuter2)
+            {
+                double pixel = (double) row[x];
+                if (pixel <= signalThreshold)
+                {
+                    meanNoise += pixel;
+                    noiseVariance += pixel * pixel;
+                    noiseCount++;
+                }
+            }
+        }
+    }
+
+    // Use sum of all pixels considered as signal as the mass metric
+    mass = meanSignal;
+    meanSignal = (signalCount > 0) ? meanSignal / signalCount : 0.0;
+
+    double noiseStdDev = 0.0;
+    if (noiseCount > 0)
+    {
+        meanNoise /= noiseCount;
+        noiseVariance = noiseVariance / noiseCount - meanNoise * meanNoise;
+        noiseStdDev = sqrt(noiseVariance);
+        snr = (noiseStdDev > 1) ? (meanSignal - meanNoise) / noiseStdDev : 0.0;
+    }
+
+    PeakVal = peak_val;
+    Mass = mass;
+    Debug.Write(wxString::Format("Star::CalcPlanetMetrics: signalThreshold=%d, meanSignal=%.1f, meanNoise=%.1f (stddev=%.1f), SNR=%.1f\n", signalThreshold, meanSignal, meanNoise, noiseStdDev, snr));
+    return snr;
+}
+bool Star::Find(const usImage *pImg, int searchRegion, double base_x, double base_y, FindMode mode, double minHFD, double maxHFD, unsigned short maxADU, StarFindLogType loggingControl)
 {
     FindResult Result = STAR_OK;
-    double newX = base_x;
-    double newY = base_y;
+    double newX = (int) base_x;
+    double newY = (int) base_y;
 
     try
     {
         if (loggingControl == FIND_LOGGING_VERBOSE)
-            Debug.Write(wxString::Format("Star::Find(%d, %d, %d, %d, (%d,%d,%d,%d), %.1f, %0.1f, %hu) frame %u\n", searchRegion, base_x, base_y, mode,
+            Debug.Write(wxString::Format("Star::Find(%d, %.2f, %.2f, %d, (%d,%d,%d,%d), %.1f, %0.1f, %hu) frame %u\n", searchRegion, base_x, base_y, mode,
             pImg->Subframe.x, pImg->Subframe.y, pImg->Subframe.width, pImg->Subframe.height, minHFD, maxHFD, maxADU, pImg->FrameNum));
 
         int minx, miny, maxx, maxy;
@@ -188,7 +286,7 @@ bool Star::Find(const usImage *pImg, int searchRegion, int base_x, int base_y, F
 
             PeakVal = peak_val;
         }
-        else
+        else if (mode == FIND_CENTROID)
         {
             // find the peak value within the search region using a smoothing function
             // also check for saturation
@@ -228,8 +326,17 @@ bool Star::Find(const usImage *pImg, int searchRegion, int base_x, int base_y, F
             PeakVal = max3[0];   // raw peak val
             peak_val /= 16; // smoothed peak value
         }
+        else // FIND_PLANET
+        {
+            // Use exact position for planet tracking
+            newX = base_x;
+            newY = base_y;
+            SNR = CalcPlanetMetrics(pImg, base_x, base_y, searchRegion, 15);
+            HFD = pFrame->pGuider->m_Planet.GetHFD();
+            goto done;
+        }
 
-        // meaure noise in the annulus with inner radius A and outer radius B
+        // measure noise in the annulus with inner radius A and outer radius B
         int const A = 7;   // inner radius
         int const B = 12;  // outer radius
         int const A2 = A * A;
@@ -365,7 +472,7 @@ bool Star::Find(const usImage *pImg, int searchRegion, int base_x, int base_y, F
         // SNR estimate from: Measuring the Signal-to-Noise Ratio S/N of the CCD Image of a Star or Nebula, J.H.Simonetti, 2004 January 8
         //     http://www.phys.vt.edu/~jhs/phys3154/snr20040108.pdf
         double const gain = .5; // electrons per ADU, nominal
-        SNR = n > 0 ? mass / sqrt(mass / gain + sigma2_bg * (double) n * (1.0 + 1.0 / (double) nbg)) : 0.0;
+        SNR = (n > 0 && nbg > 0) ? mass / sqrt(mass / gain + sigma2_bg * (double)n * (1.0 + 1.0 / (double)nbg)) : 0.0;
 
         double const LOW_SNR = 3.0;
 
@@ -428,7 +535,7 @@ bool Star::Find(const usImage *pImg, int searchRegion, int base_x, int base_y, F
             goto done;
         }
 
-        // maxADU not known, use the "flat-top" hueristic
+        // maxADU not known, use the "flat-top" heuristic
         //
         // even at saturation, the max values may vary a bit due to noise
         // Call it saturated if the the top three values are within 32 parts per 65535 of max for 16-bit cameras,
@@ -463,7 +570,7 @@ done:
 
     bool wasFound = WasFound(Result);
 
-    if (!IsValid() || Result == STAR_ERROR)
+    if (Result == STAR_ERROR)
     {
         Mass = 0.0;
         SNR = 0.0;

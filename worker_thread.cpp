@@ -236,7 +236,7 @@ bool WorkerThread::HandleExpose(EXPOSE_REQUEST *req)
         bError = true;
     }
 
-    return  bError;
+    return bError;
 }
 
 void WorkerThread::SendWorkerThreadExposeComplete(usImage *pImage, bool bError)

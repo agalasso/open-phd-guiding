@@ -45,12 +45,20 @@ public:
     void OnPaint(wxPaintEvent& evt);
     void SetState(bool is_active);
     void OnLClick(wxMouseEvent& evt);
+    void OnMouseWheel(wxMouseEvent& evt);
+
 private:
     int mode; // 0= 2D profile of mid-row, 1=2D of avg_row, 2=2D of avg_col
     bool rawMode;
     int imageLeftMargin;
     int imageBottom;
     bool visible;
+
+    // Rectangle where HFD label is drawn
+    bool m_inFocusingMode;
+    int m_labelX, m_labelY;
+    int m_labelWidth, m_labelHeight;
+
     unsigned short *data;
     int horiz_profile[21], vert_profile[21], midrow_profile[21];
     DECLARE_EVENT_TABLE()

@@ -32,8 +32,6 @@
  *
  */
 
-
-
 #include "phd.h"
 
 #ifdef OPENSSAG_CAMERA

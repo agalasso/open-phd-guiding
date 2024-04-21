@@ -165,6 +165,46 @@ public:
     void SetFocalLength(int val);
 };
 
+// NOTE: Custom Workaround for Toolbar Sync
+// ------------------------------------------------------------------------
+// This derived wxAuiToolBarExt class includes methods to access private
+// data of wxAuiToolBar. These methods are used to manually sync the
+// toolbar's pane info (wxAuiPaneInfo) in scenarios where the default
+// wxWidgets behavior does not suffice (e.g., syncing toolbar layout after
+// dynamic changes).
+//
+// This workaround is currently necessary due to the longstanding use of
+// wxWidgets 3.0.5 in PHD2 and its specific UI requirements. If updating
+// wxWidgets or adjusting UI implementation, consider removing or
+// updating this custom extension.
+// ------------------------------------------------------------------------
+class wxAuiToolBarExt : public wxAuiToolBar
+{
+public:
+    wxAuiToolBarExt(wxWindow* parent, wxWindowID id = -1,
+        const wxPoint& position = wxDefaultPosition,
+        const wxSize& size = wxDefaultSize,
+        long style = wxAUI_TB_DEFAULT_STYLE)
+        : wxAuiToolBar(parent, id, position, size, style) {}
+
+    wxSize GetAbsoluteMinSize() const
+    {
+        return m_absoluteMinSize;
+    }
+
+    int GetToolPanes() const
+    {   // iterate over m_items and count the number of tool panes
+        int count = 0;
+        for (size_t i = 0; i < m_items.GetCount(); i++)
+        {
+            wxAuiToolBarItem& item = m_items.Item(i);
+            if (item.GetKind() != wxITEM_SEPARATOR)
+                count++;
+        }
+        return count;
+    }
+};
+
 class MyFrame : public wxFrame
 {
 protected:
@@ -178,11 +218,13 @@ protected:
     int GetTimeLapse() const;
     int GetExposureDelay();
 
+    wxMutex eventLock;
     bool SetFocalLength(int focalLength);
 
     friend class MyFrameConfigDialogPane;
     friend class MyFrameConfigDialogCtrlSet;
     friend class WorkerThread;
+    friend class PlanetToolWin;
 
 private:
 
@@ -224,13 +266,14 @@ public:
     wxMenuItem *m_cameraMenuItem;
     wxMenuItem *m_autoSelectStarMenuItem;
     wxMenuItem *m_takeDarksMenuItem;
+    wxMenuItem *m_PlanetaryMenuItem;
     wxMenuItem *m_useDarksMenuItem;
     wxMenuItem *m_refineDefMapMenuItem;
     wxMenuItem *m_useDefectMapMenuItem;
     wxMenuItem *m_calibrationMenuItem;
     wxMenuItem *m_importCamCalMenuItem;
     wxMenuItem *m_upgradeMenuItem;
-    wxAuiToolBar *MainToolbar;
+    wxAuiToolBarExt *MainToolbar;
     wxInfoBar *m_infoBar;
     wxComboBox    *Dur_Choice;
     wxCheckBox *HotPixel_Checkbox;
@@ -250,6 +293,7 @@ public:
     wxDialog *pStarCrossDlg;
     wxWindow *pNudgeLock;
     wxWindow *pCometTool;
+    wxWindow *pPlanetTool;
     wxWindow *pGuidingAssistant;
     wxWindow *pierFlipToolWin;
     RefineDefMap *pRefineDefMap;
@@ -263,6 +307,9 @@ public:
     wxDateTime m_guidingStarted;
     wxStopWatch m_guidingElapsed;
     Star::FindMode m_starFindMode;
+    Star::FindMode m_StarFindMode_Saved;
+    wxString m_StopReason;
+
     double m_minStarHFD;
     bool m_rawImageMode;
     bool m_rawImageModeWarningDone;
@@ -306,6 +353,7 @@ public:
     void OnStaticPaTool(wxCommandEvent& evt);
     void OnCalibrationAssistant(wxCommandEvent& evt);
     void OnCometTool(wxCommandEvent& evt);
+    void OnPlanetTool(wxCommandEvent& evt);
     void OnGuidingAssistant(wxCommandEvent& evt);
     void OnSetupCamera(wxCommandEvent& evt);
     void OnExposureDurationSelected(wxCommandEvent& evt);
@@ -350,8 +398,8 @@ public:
 
     const std::vector<int>& GetExposureDurations() const;
     bool SetCustomExposureDuration(int ms);
-    void GetExposureInfo(int *currExpMs, bool *autoExp) const;
-    bool SetExposureDuration(int val);
+    bool GetExposureInfo(int *currExpMs, bool *autoExp) const;
+    bool SetExposureDuration(int val, bool updateCustom = false);
     const AutoExposureCfg& GetAutoExposureCfg() const { return m_autoExp; }
     bool SetAutoExposureCfg(int minExp, int maxExp, double targetSNR);
     void ResetAutoExposure();
@@ -366,6 +414,9 @@ public:
     static double GetDitherAmount(int ditherType);
     Star::FindMode GetStarFindMode() const;
     Star::FindMode SetStarFindMode(Star::FindMode mode);
+    void SaveStarFindMode();
+    void RestoreStarFindMode();
+
     bool GetRawImageMode() const;
     bool SetRawImageMode(bool force);
 
@@ -430,6 +481,7 @@ public:
 
     void NotifyUpdateButtonsStatus(); // can be called from any thread
     void UpdateButtonsStatus();
+    void UpdateCameraSettings();
 
     static double GetPixelScale(double pixelSizeMicrons, int focalLengthMm, int binning);
     double GetCameraPixelScale() const;
@@ -546,6 +598,7 @@ enum {
     BUTTON_AUTOSTAR,
     BUTTON_DURATION,
     BUTTON_ADVANCED,
+    BUTTON_PLANETARY,
     BUTTON_CAM_PROPERTIES,
     BUTTON_ALERT_ACTION,
     BUTTON_ALERT_CLOSE,
@@ -632,6 +685,7 @@ enum {
     MENU_POLARDRIFTTOOL,
     MENU_STATICPATOOL,
     MENU_COMETTOOL,
+    MENU_PLANETARY,
     MENU_GUIDING_ASSISTANT,
     MENU_SAVESETTINGS,
     MENU_LOADSETTINGS,

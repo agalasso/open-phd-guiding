@@ -1287,5 +1287,3 @@ void DefectMap::DeleteDefectMap(int profileId)
         wxRemoveFile(filename);
     }
 }
-
-

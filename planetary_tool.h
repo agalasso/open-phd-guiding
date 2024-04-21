@@ -1,9 +1,9 @@
 /*
- *  serialport_posix.h
+ *  planetary_tool.h
  *  PHD Guiding
  *
- *  Created by Hans Lambermont
- *  Copyright (c) 2016 Hans Lambermont
+ *  Created by Leo Shatz
+ *  Copyright (c) 2023-2024 Leo Shatz, openphdguiding.org
  *  All rights reserved.
  *
  *  This source code is distributed under the following "BSD" license
@@ -14,7 +14,7 @@
  *    Redistributions in binary form must reproduce the above copyright notice,
  *     this list of conditions and the following disclaimer in the
  *     documentation and/or other materials provided with the distribution.
- *    Neither the name Craig Stark, Stark Labs nor the names of its
+ *    Neither the name of Craig Stark, Stark Labs nor the names of its
  *     contributors may be used to endorse or promote products derived from
  *     this software without specific prior written permission.
  *
@@ -32,39 +32,31 @@
  *
  */
 
-#if !defined(SERIALPORT_POSIX_H_INCLUDED)
-#define SERIALPORT_POSIX_H_INCLUDED
+#pragma once
 
-#if defined (__linux__) || defined (__APPLE__) || defined (__FreeBSD__)
+// Default planetary detection parameters values
+#define PT_MIN_RADIUS_DEFAULT  100
+#define PT_MAX_RADIUS_DEFAULT  200
+#define PT_RADIUS_MIN          1
+#define PT_RADIUS_MAX          2000
 
-#include <termios.h>
+#define PT_HIGH_THRESHOLD_DEFAULT 200
+#define PT_THRESHOLD_MIN          1
+#define PT_HIGH_THRESHOLD_MAX     400
+#define PT_LOW_THRESHOLD_MAX      200
 
-class SerialPortPosix : public SerialPort
+#define PT_CAMERA_EXPOSURE_MIN    1
+#define PT_CAMERA_EXPOSURE_MAX    30000
+
+static inline wxString PausePlanetDetectionAlertEnabledKey()
 {
-    int m_fd;
-#if defined (__APPLE__)
-    struct termios m_originalAttrs;
-#endif
+    // we want the key to be under "/Confirm" so ConfirmDialog::ResetAllDontAskAgain() resets it, but we also want the setting to be per-profile
+    return wxString::Format("/Confirm/%d/PausePlanetDetectionAlertEnabled", pConfig->GetCurrentProfileId());
+}
 
+class PlanetTool
+{
+    PlanetTool();
 public:
-
-    wxArrayString GetSerialPortList() override;
-
-    SerialPortPosix();
-    virtual ~SerialPortPosix();
-
-    bool Connect(const wxString& portName, int baud, int dataBits, int stopBits, PARITY Parity, bool useRTS, bool useDTR) override;
-    bool Disconnect() override;
-
-    bool Send(const unsigned char *pData, unsigned count) override;
-
-    bool SetReceiveTimeout(int timeoutMilliSeconds) override;
-    bool Receive(unsigned char *pData, unsigned count) override;
-
-    bool SetRTS(bool asserted) override;
-    bool SetDTR(bool asserted) override;
+    static wxWindow *CreatePlanetToolWindow();
 };
-
-#endif // __linux__ || __APPLE__
-
-#endif // SERIALPORT_POSIX_H_INCLUDED

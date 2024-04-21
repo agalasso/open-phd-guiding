@@ -32,7 +32,6 @@
  *
  */
 
-
 #ifndef CAM_INOVAPLC_H_INCLUDED
 #define CAM_INOVAPLC_H_INCLUDED
 

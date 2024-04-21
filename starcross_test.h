@@ -79,7 +79,7 @@ private:
     int m_DirectionalPulseCount;
     int m_Amount;
     bool m_ShowDetails;
- 
+
     void SuggestParams();
     void SynchDetailSliders();
     void SynchSummarySliders();

@@ -63,6 +63,8 @@ class ScopeASCOM : public Scope
     DISPID dispid_decguiderate;
     DISPID dispid_sideofpier;
     DISPID dispid_abortslew;
+    DISPID dispid_tracking;
+    DISPID dispid_trackingrate;
 
     // other private variables
     bool m_canCheckPulseGuiding;
@@ -99,6 +101,14 @@ public:
     MOVE_RESULT Guide(GUIDE_DIRECTION direction, int durationMs) override;
 
     double GetDeclinationRadians() override;
+    void EnumerateTrackingRates() override;
+    bool GetTracking(bool* tracking, bool verbose) override;
+    bool SetTracking(bool tracking) override;
+    bool CanSetTracking() override;
+    bool GetTrackingRate(enum DriveRates* rate, bool verbose) override;
+    bool GetTrackingRate(enum DriveRates* rate, double *ra_rate, double *dec_rate, bool verbose) override;
+    bool SetTrackingRate(enum DriveRates rate) override;
+    bool SetTrackingRateOffsets(double raRateOffset, double decRateOffset) override;
     bool GetGuideRates(double *pRAGuideRate, double *pDecGuideRate) override;
     bool GetCoordinates(double *ra, double *dec, double *siderealTime) override;
     bool GetSiteLatLong(double *latitude, double *longitude) override;

@@ -585,8 +585,6 @@ void AdvancedDialog::MakeImageScaleAdjustments()
             Debug.Write("Calibrations cleared because of image scale change\n");
         }
     }
-
-
 }
 
 int AdvancedDialog::GetBinning()

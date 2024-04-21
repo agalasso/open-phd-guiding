@@ -33,7 +33,6 @@
  *
  */
 
-
 #include "phd.h"
 
 #ifdef KWIQGUIDER_CAMERA

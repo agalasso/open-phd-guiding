@@ -260,7 +260,6 @@ void RefineDefMap::LoadFromProfile()
 {
     // Let the user know this might take some time...
     ShowStatus(_("Please wait while image statistics are being computed..."), false);
-    
 
     m_darks.LoadDarks();
     m_builder.Init(m_darks);

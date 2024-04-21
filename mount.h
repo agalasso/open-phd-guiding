@@ -172,7 +172,7 @@ class Mount : public wxMessageBoxProxy
     bool m_calibrated;
     Calibration m_cal;
     double m_xRate;         // rate adjusted for declination
-    double m_yAngleError;
+    double m_yAngleError;   // orthogonality error
 
 protected:
     bool m_guidingEnabled;

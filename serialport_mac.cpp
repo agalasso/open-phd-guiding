@@ -46,26 +46,26 @@ static kern_return_t createSerialIterator(io_iterator_t *serialIterator)
     kern_return_t   kernResult;
     mach_port_t     masterPort;
     CFMutableDictionaryRef  classesToMatch;
-    
+
     if ((kernResult = IOMainPort(0, &masterPort)) != KERN_SUCCESS)
     {
         printf("IOMainPort returned %d\n", kernResult);
         return kernResult;
     }
-    
+
     if ((classesToMatch = IOServiceMatching(kIOSerialBSDServiceValue)) == NULL)
     {
         printf("IOServiceMatching returned NULL\n");
         return kernResult;
     }
-    
+
     CFDictionarySetValue(classesToMatch, CFSTR(kIOSerialBSDTypeKey),CFSTR(kIOSerialBSDAllTypes));
     kernResult = IOServiceGetMatchingServices(masterPort, classesToMatch, serialIterator);
     if (kernResult != KERN_SUCCESS)
     {
         printf("IOServiceGetMatchingServices returned %d\n", kernResult);
     }
-    
+
     return kernResult;
 }
 
@@ -89,7 +89,7 @@ static const char *getRegistryString(io_object_t sObj, const char *propName)
 wxArrayString SerialPortMac::GetSerialPortList(void)
 {
     wxArrayString ret;
-    
+
     io_iterator_t iterator;
     kern_return_t result = createSerialIterator(&iterator);
     if (result == KERN_SUCCESS){
@@ -103,7 +103,7 @@ wxArrayString SerialPortMac::GetSerialPortList(void)
         }
         IOObjectRelease(iterator);
     }
-    
+
     return ret;
 }
 

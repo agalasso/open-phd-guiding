@@ -299,7 +299,7 @@ bool StepGuiderSbigAoINDI::Connect()
                                    INDIhost, INDIport, INDIaoDeviceName));
 
     Debug.Write(wxString::Format("Waiting for 30s for [%s] to connect...\n", INDIaoDeviceName));
-    
+
     /* Wait in background for driver to establish a device connection */
     struct ConnectInBg : public ConnectAoInBg
     {
@@ -307,25 +307,21 @@ bool StepGuiderSbigAoINDI::Connect()
         ConnectInBg(StepGuiderSbigAoINDI *ao_) : ao(ao_) { }
         bool Entry()
         {
-
-            //Wait for driver to establish a device connection
+            // Wait for driver to establish a device connection
             if (ao->connectServer())
             {
-                
                 int i = 0;
-                while (!ao->Connected && i++ < 300) 
+                while (!ao->Connected && i++ < 300)
                 {
                     if (IsCanceled())
                         break;
-                    
+
                     wxMilliSleep(100);
                 }
-                
             }
 
             // We need to return FALSE if we are successful???
             return !ao->Connected;
-
         }
     };
 

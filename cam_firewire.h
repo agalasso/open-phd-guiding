@@ -32,7 +32,6 @@
  *
  */
 
-
 #ifndef FIREWIREDEF
 #define FIREWIREDEF
 

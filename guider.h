@@ -40,6 +40,8 @@
 #ifndef GUIDER_H_INCLUDED
 #define GUIDER_H_INCLUDED
 
+#include "guider_planetary.h"
+
 enum GUIDER_STATE
 {
     STATE_UNINITIALIZED = 0,
@@ -191,7 +193,6 @@ public:
         virtual void LayoutControls(Guider *pGuider, BrainCtrlIdMap& CtrlMap);
     };
 
-
     OVERLAY_MODE GetOverlayMode() const;
 
 public:
@@ -279,6 +280,9 @@ public:
 
     void SetAutoSelDownsample(unsigned int val);
     unsigned int GetAutoSelDownsample() const;
+
+    // Planetary disk detection parameters
+    GuiderPlanet m_Planet;
 
     // virtual functions -- these CAN be overridden by a subclass, which should
     // consider whether they need to call the base class functions as part of

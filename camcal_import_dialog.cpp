@@ -33,7 +33,6 @@
  *
  */
 
-
 // Handles import of camera calibration files (dark library, bad-pix map files) from user-selected profile to the current profile
 // Source profile choices are limited to camera data with compatible geometry
 

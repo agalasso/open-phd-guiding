@@ -483,13 +483,13 @@ bool SVBCamera::Connect(const wxString& camId)
             case SVB_WB_R:
             case SVB_WB_G:
             case SVB_WB_B:
-            case SVB_FLIP: //reference: enum SVB_FLIP_STATUS
+            case SVB_FLIP: // reference: enum SVB_FLIP_STATUS
             case SVB_FRAME_SPEED_MODE: // 0:low speed, 1:medium speed, 2:high speed
             case SVB_CONTRAST:
             case SVB_SHARPNESS:
             case SVB_SATURATION:
             case SVB_AUTO_TARGET_BRIGHTNESS:
-            case SVB_BLACK_LEVEL: //black level offset
+            case SVB_BLACK_LEVEL: // black level offset
                 SVBSetControlValue(m_cameraId, caps.ControlType, caps.DefaultValue, SVB_FALSE);
                 break;
 

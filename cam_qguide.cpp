@@ -44,7 +44,6 @@
 #include <wx/textfile.h>
 //wxTextFile *qglogfile;
 
-
 int ushort_compare (const void * a, const void * b) {
   if ( *(unsigned short *)a > *(unsigned short *)b ) return 1;
   if ( *(unsigned short *)a < *(unsigned short *)b ) return -1;

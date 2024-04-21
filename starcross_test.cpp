@@ -45,8 +45,7 @@ wxEND_EVENT_TABLE()
 #define SCT_DEFAULT_PULSE_COUNT 25
 #define SCT_DEFAULT_GUIDESPEED 0.5
 
-
- // Utility function to add the <label, input> pairs to a flexgrid
+// Utility function to add the <label, input> pairs to a flexgrid
 static void AddTableEntryPair(wxWindow *parent, wxFlexGridSizer *pTable, const wxString& label, wxWindow *pControl)
 {
     wxStaticText *pLabel = new wxStaticText(parent, wxID_ANY, label + _(": "), wxPoint(-1, -1), wxSize(-1, -1));
@@ -443,7 +442,6 @@ void StarCrossDialog::OnSuggest(wxCommandEvent& evt)
 {
     SuggestParams();
 }
-
 
 void StarCrossDialog::OnViewControl(wxCommandEvent& evt)
 {

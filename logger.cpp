@@ -33,7 +33,6 @@
  *
  */
 
-
 #include "phd.h"
 #include "logger.h"
 #include "wx/dir.h"

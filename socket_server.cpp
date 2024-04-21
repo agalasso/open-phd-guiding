@@ -32,9 +32,6 @@
  *
  */
 
-
-
-
 #include "phd.h"
 
 #include "socket_server.h"

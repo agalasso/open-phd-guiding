@@ -75,7 +75,6 @@ protected:
     Mount *m_pMount;
     GuideAxis m_guideAxis;
 
-
 public:
     GuideAlgorithm(Mount *pMount, GuideAxis axis) : m_pMount(pMount), m_guideAxis(axis) {};
     virtual ~GuideAlgorithm() {};

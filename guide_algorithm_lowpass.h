@@ -57,7 +57,6 @@ protected:
         wxSpinCtrlDouble *m_pSlopeWeight;
         wxSpinCtrlDouble *m_pMinMove;
 
-
     public:
         GuideAlgorithmLowpassConfigDialogPane(wxWindow *pParent, GuideAlgorithmLowpass *pGuideAlgorithm);
         ~GuideAlgorithmLowpassConfigDialogPane();

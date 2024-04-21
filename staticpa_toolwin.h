@@ -66,7 +66,7 @@ struct StaticPaToolWin : public wxFrame
     wxButton *m_closeButton;     // Close button
     wxStatusBar *m_statusBar;
     wxChoice *m_refStarChoice;  // Listbox for reference stars
-    wxChoice *m_hemiChoice;     // Listbox for manual hemisphere choice 
+    wxChoice *m_hemiChoice;     // Listbox for manual hemisphere choice
 
     class PolePanel : public wxPanel
     {
@@ -79,7 +79,7 @@ struct StaticPaToolWin : public wxFrame
         void Paint();
         DECLARE_EVENT_TABLE()
     };
-    PolePanel *m_polePanel; // Panel for drawing of pole stars 
+    PolePanel *m_polePanel; // Panel for drawing of pole stars
 
     /*
     Constants used in the tool window controls

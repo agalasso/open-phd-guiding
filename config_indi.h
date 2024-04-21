@@ -36,7 +36,6 @@
  *
  */
 
-
 #ifndef _CONFIG_INDI_H_
 #define _CONFIG_INDI_H_
 

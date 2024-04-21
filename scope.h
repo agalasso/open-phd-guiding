@@ -48,6 +48,20 @@ enum DEC_GUIDE_MODE
     DEC_SOUTH
 };
 
+// Well known telescope tracking rates
+enum DriveRates
+{
+    driveSidereal = 0,   // Sidereal tracking rate(15.041 arcseconds per second).
+    driveLunar = 1,      // Lunar tracking rate(14.685 arcseconds per second).
+    driveSolar = 2,      // Solar tracking rate(15.0 arcseconds per second).
+    driveKing = 3,       // King tracking rate(15.0369 arcseconds per second).
+    driveMaxRate = 4     // Maximum tracking rate
+};
+
+// RA offsets relataive to sidereal rate for lunar and solar tracking
+#define RA_LUNAR_RATE_OFFSET (-0.52965200)
+#define RA_SOLAR_RATE_OFFSET (-0.04106700)
+
 class ScopeConfigDialogCtrlSet : public MountConfigDialogCtrlSet
 {
     Scope *m_pScope;
@@ -150,6 +164,13 @@ class Scope : public Mount
 public:
     bool m_CalDetailsValidated;
     bool m_bogusGuideRatesFlagged;
+
+    bool m_canSetTracking;
+    struct GuideRateInfo
+    {
+        wxString name;
+        bool canSet;
+    } m_mountRates [4];
 
     // Things related to the Advanced Config Dialog
 protected:
@@ -266,6 +287,14 @@ public:
     // Does not get called unless guiding was started interactively (by clicking the guide button)
     virtual bool PreparePositionInteractive();
     virtual bool CanPulseGuide();
+    virtual void EnumerateTrackingRates();
+    virtual bool GetTracking(bool* tracking, bool verbose = false);
+    virtual bool SetTracking(bool tracking);
+    virtual bool GetTrackingRate(enum DriveRates* rate, bool verbose = false);
+    virtual bool GetTrackingRate(enum DriveRates* rate, double *ra_rate, double* dec_rate, bool verbose);
+    virtual bool SetTrackingRate(enum DriveRates rate);
+    virtual bool SetTrackingRateOffsets(double raRateOffset, double decRateOffset);
+    virtual bool CanSetTracking();
 
     void StartDecDrift() override;
     void EndDecDrift() override;

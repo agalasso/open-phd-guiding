@@ -32,7 +32,6 @@
 *
 */
 
-
 #include "phd.h"
 
 #ifdef ROTATOR_INDI
@@ -45,7 +44,6 @@
 
 #include <libindi/basedevice.h>
 #include <libindi/indiproperty.h>
-
 
 class RotatorINDI : public Rotator, public INDI::BaseClient {
     public:
@@ -150,7 +148,7 @@ bool RotatorINDI::Connect() {
         ConnectInBg(RotatorINDI* rotator_) : rotator(rotator_) {}
 
         bool Entry() {
-            //Wait for driver to establish a device connection
+            // Wait for driver to establish a device connection
             if(rotator->connectServer()) {
                 int i = 0;
                 while(!rotator->IsConnected() && i++ < 300) {

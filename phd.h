@@ -79,7 +79,7 @@
 
 #define APPNAME _T("PHD2 Guiding")
 #define PHDVERSION _T("2.6.13")
-#define PHDSUBVER _T("dev2")
+#define PHDSUBVER _T("-planet.rc1")
 #define FULLVER PHDVERSION PHDSUBVER
 
 #if defined (__WINDOWS__)

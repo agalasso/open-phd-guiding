@@ -35,7 +35,6 @@
 #ifndef CONFIG_DIALOG_H_INCLUDED
 #define CONFIG_DIALOG_H_INCLUDED
 
-
 // Design Notes:  The goal here is to separate the ownership of various controls from where they are displayed in the AD.  A class that "owns" a control
 // will create it and handle all its behavior - loading, unloading, all the semantics.  This part is handled by the ConfigDlgControlSet.  Where those controls
 // are displayed is determined by the BrainIDControlMap, a dictionary that maps the control ids to the AD panel where they will be displayed.  The owner of the

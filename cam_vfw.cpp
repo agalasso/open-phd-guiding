@@ -163,7 +163,6 @@ bool CameraVFW::Capture(int duration, usImage& img, int options, const wxRect& s
     return false;
 }
 
-
 void CameraVFW::ShowPropertyDialog() {
 //      if (event.GetId() == ADV_BUTTON1) {
 /*  if (VFW_Window->HasVideoFormatDialog()) {

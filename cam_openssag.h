@@ -32,7 +32,6 @@
  *
  */
 
-
 #ifndef CAM_OPENSSAG_H_INCLUDED
 #define CAM_OPENSSAG_H_INCLUDED
 

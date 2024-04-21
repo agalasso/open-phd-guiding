@@ -168,7 +168,7 @@ wxCAPTION | wxCLOSE_BOX | wxMINIMIZE_BOX | wxSYSTEM_MENU | wxTAB_TRAVERSAL | wxF
     ClearState();
     m_aligning = false;
 
-    //Fairly convoluted way to get the camera size in pixels
+    // Fairly convoluted way to get the camera size in pixels
     wxImage *pDispImg = pFrame->pGuider->DisplayedImage();
     double scalefactor = pFrame->pGuider->ScaleFactor();
     double xpx = pDispImg->GetWidth() / scalefactor;
@@ -231,7 +231,6 @@ wxCAPTION | wxCLOSE_BOX | wxMINIMIZE_BOX | wxSYSTEM_MENU | wxTAB_TRAVERSAL | wxF
         c_NthStars.at(is).ra = radec_now.X;
         c_NthStars.at(is).dec = radec_now.Y;
     }
-
 
     // get site lat/long from scope to determine hemisphere.
     m_refStar = pConfig->Profile.GetInt("/StaticPaTool/RefStar", 0);
@@ -1309,6 +1308,3 @@ void StaticPaToolWin::CreateStarTemplate(wxDC& dc, const wxPoint& m_currPt)
     dc.DrawLine(160, 120, 160-m_currPt.x, 120-m_currPt.y);
     return;
 }
-
-
-

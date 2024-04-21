@@ -514,7 +514,6 @@ inline static int round_up(int v, int m)
     return round_down(v + m - 1, m);
 }
 
-
 void __stdcall CameraCallback(unsigned int event, void *pCallbackCtx)
 {
     if (event == ALTAIRCAM_EVENT_IMAGE)
@@ -573,7 +572,7 @@ bool AltairCamera::Capture(int duration, usImage& img, int options, const wxRect
     // which could be quite stale. read out all buffered frames so the frame we
     // get is current
 
-    //flush_buffered_image(m_handle, img);
+    // flush_buffered_image(m_handle, img);
     unsigned int width, height;
     while (SUCCEEDED(m_sdk.PullImage(m_handle, m_buffer, 8, &width, &height)))
     {

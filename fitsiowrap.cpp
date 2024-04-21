@@ -104,7 +104,6 @@ FitsFname::FitsFname(const wxString& path, bool create, bool clobber)
 #endif // __WINDOWS__
 }
 
-
 int PHD_fits_open_diskfile(fitsfile **fptr, const wxString& filename, int iomode, int *status)
 {
     return fits_open_diskfile(fptr, FitsFname(filename, false, false), iomode, status);
