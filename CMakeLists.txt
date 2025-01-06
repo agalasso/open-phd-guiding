@@ -354,6 +354,8 @@ set(phd2_SRC
   ${phd_src_dir}/calstep_dialog.h
   ${phd_src_dir}/camcal_import_dialog.cpp
   ${phd_src_dir}/camcal_import_dialog.h
+  ${phd_src_dir}/camera_selector_button.cpp
+  ${phd_src_dir}/camera_selector_button.h
   ${phd_src_dir}/circbuf.h
 
   ${phd_src_dir}/comet_tool.cpp

@@ -54,8 +54,7 @@ wxBEGIN_EVENT_TABLE(GearDialog, wxDialog)
     EVT_BUTTON(GEAR_BUTTON_DISCONNECT_ALL, GearDialog::OnButtonDisconnectAll)
 
     EVT_CHOICE(GEAR_CHOICE_CAMERA, GearDialog::OnChoiceCamera)
-    EVT_BUTTON(GEAR_BUTTON_SELECT_CAMERA, GearDialog::OnButtonSelectCamera)
-    EVT_MENU_RANGE(MENU_SELECT_CAMERA_BEGIN, MENU_SELECT_CAMERA_END, GearDialog::OnMenuSelectCamera)
+    EVT_COMMAND_RANGE(MENU_SELECT_CAMERA_BEGIN, MENU_SELECT_CAMERA_END, SELECT_CAMERA_EVENT, GearDialog::OnCommandSelectCamera)
     EVT_BUTTON(GEAR_BUTTON_SETUP_CAMERA, GearDialog::OnButtonSetupCamera)
     EVT_TOGGLEBUTTON(GEAR_BUTTON_CONNECT_CAMERA, GearDialog::OnButtonConnectCamera)
     EVT_TOGGLEBUTTON(GEAR_BUTTON_DISCONNECT_CAMERA, GearDialog::OnButtonDisconnectCamera)
@@ -256,14 +255,10 @@ void GearDialog::Initialize()
                               _("Camera"));
     m_gearSizer->Add(m_pCameras, wxGBPosition(0, 1), wxGBSpan(1, 1), wxALL | wxEXPAND | wxALIGN_CENTER_VERTICAL, 5);
 
-#include "icons/select.png.h"
-    wxBitmap select_bmp(wxBITMAP_PNG_FROM_DATA(select));
 #include "icons/setup.png.h"
     wxBitmap setup_bmp(wxBITMAP_PNG_FROM_DATA(setup));
 
-    m_selectCameraButton = new wxBitmapButton(this, GEAR_BUTTON_SELECT_CAMERA, select_bmp);
-    m_selectCameraButton->SetToolTip(_("Select which camera to connect to when there are multiple cameras of the same type."));
-    m_selectCameraButton->Enable(false);
+    m_selectCameraButton = new CameraSelectorButton(this, GEAR_BUTTON_SELECT_CAMERA);
     m_gearSizer->Add(m_selectCameraButton, wxGBPosition(0, 2), wxGBSpan(1, 1), wxALL | wxEXPAND | wxALIGN_CENTER_VERTICAL, 5);
     m_pSetupCameraButton = new wxBitmapButton(this, GEAR_BUTTON_SETUP_CAMERA, setup_bmp);
     m_pSetupCameraButton->SetToolTip(_("Camera Setup"));
@@ -952,7 +947,9 @@ void GearDialog::OnChoiceCamera(wxCommandEvent& event)
             m_flushConfig = true;
         }
 
+        m_selectCameraButton->SetCamera(choice);
         m_selectCameraButton->Enable(m_pCamera && m_pCamera->CanSelectCamera());
+        m_lastCamera = choice;
 
         if (!m_pCamera)
         {
@@ -987,81 +984,14 @@ static void AutoLoadDarks()
     }
 }
 
-static wxString CameraSelectionKey(const wxString& camName)
-{
-    std::hash<std::string> hash_fn;
-    std::string name(camName.c_str());
-    return wxString::Format("/cam_hash/%lx/whichCamera", (unsigned long) hash_fn(name));
-}
-
-static wxString SelectedCameraId(const wxString& camName)
-{
-    wxString key = CameraSelectionKey(camName);
-    return pConfig->Profile.GetString(key, GuideCamera::DEFAULT_CAMERA_ID);
-}
-
 wxString GearDialog::SelectedCameraId() const
 {
-    return ::SelectedCameraId(m_lastCamera);
+    return CameraSelectorButton::SelectedCameraId(m_lastCamera);
 }
 
-void GearDialog::OnButtonSelectCamera(wxCommandEvent& event)
+void GearDialog::OnCommandSelectCamera(wxCommandEvent& event)
 {
-    if (!m_pCamera || !m_pCamera->CanSelectCamera())
-        return;
-
-    if (m_pCamera->HandleSelectCameraButtonClick(event))
-        return;
-
-    wxArrayString names;
-    m_cameraIds.clear(); // otherwise camera selection only works randomly as EnumCameras tends to append to the camera Ids
-    bool error = m_pCamera->EnumCameras(names, m_cameraIds);
-    if (error || names.size() == 0)
-    {
-        names.clear();
-        names.Add(_("No cameras found"));
-        m_cameraIds.clear();
-    }
-
-    wxString selectedId = ::SelectedCameraId(m_lastCamera);
-
-    wxMenu *menu = new wxMenu();
-    int id = MENU_SELECT_CAMERA_BEGIN;
-    for (unsigned int idx = 0; idx < names.size(); idx++)
-    {
-        wxMenuItem *item = menu->AppendRadioItem(id, names.Item(idx));
-        if (idx < m_cameraIds.size())
-        {
-            const wxString& camId = m_cameraIds[idx];
-            if (camId == selectedId || (idx == 0 && selectedId == GuideCamera::DEFAULT_CAMERA_ID))
-                item->Check(true);
-        }
-        if (++id > MENU_SELECT_CAMERA_END)
-        {
-            Debug.AddLine("Truncating camera list!");
-            break;
-        }
-    }
-
-    PopupMenu(menu, m_selectCameraButton->GetPosition().x,
-              m_selectCameraButton->GetPosition().y + m_selectCameraButton->GetSize().GetHeight());
-
-    delete menu;
-}
-
-void GearDialog::OnMenuSelectCamera(wxCommandEvent& event)
-{
-    unsigned int idx = event.GetId() - MENU_SELECT_CAMERA_BEGIN;
-    if (idx < m_cameraIds.size())
-    {
-        wxString key = CameraSelectionKey(m_lastCamera);
-        const wxString& id = m_cameraIds[idx];
-        if (pConfig->Profile.GetString(key, wxEmptyString) != id)
-        {
-            pConfig->Profile.SetString(key, id);
-            m_flushConfig = true;
-        }
-    }
+    m_flushConfig = true;
 }
 
 void GearDialog::OnButtonSetupCamera(wxCommandEvent& event)
@@ -1096,7 +1026,7 @@ bool GearDialog::DoConnectCamera(bool autoReconnecting)
 
         pFrame->StatusMsgNoTimeout(_("Connecting to Camera ..."));
 
-        wxString cameraId = ::SelectedCameraId(m_lastCamera);
+        wxString cameraId = SelectedCameraId();
 
         Debug.Write(wxString::Format("Connecting to camera [%s] id = [%s]\n", newCam, cameraId));
 

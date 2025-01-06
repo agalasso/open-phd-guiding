@@ -35,6 +35,8 @@
 #ifndef GEAR_DIALOG_H_INCLUDED
 #define GEAR_DIALOG_H_INCLUDED
 
+#include "camera_selector_button.h"
+
 class wxGridBagSizer;
 
 class GearDialog : public wxDialog
@@ -64,7 +66,7 @@ class GearDialog : public wxDialog
     wxMenu *m_menuProfileManage;
 
     wxChoice *m_pCameras;
-    wxButton *m_selectCameraButton;
+    CameraSelectorButton *m_selectCameraButton;
     wxButton *m_pSetupCameraButton;
     wxToggleButton *m_pConnectCameraButton;
 
@@ -139,8 +141,7 @@ private:
     void OnChar(wxKeyEvent& event);
 
     void OnChoiceCamera(wxCommandEvent& event);
-    void OnButtonSelectCamera(wxCommandEvent& event);
-    void OnMenuSelectCamera(wxCommandEvent& evt);
+    void OnCommandSelectCamera(wxCommandEvent& event);
 
     void OnButtonSetupCamera(wxCommandEvent& event);
     bool DoConnectCamera(bool autoReconnecting);
