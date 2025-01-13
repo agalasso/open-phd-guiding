@@ -392,6 +392,8 @@ else()
     FetchContent_Declare(
       googletest
       URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.tar.gz
+      # Compiling on Mac OSX Sonoma requires v1.15.2 - Comment the URL line above and uncomment URL line below for mac compilation
+      #URL https://github.com/google/googletest/releases/download/v1.15.2/googletest-1.15.2.tar.gz
   )
   # For Windows: Prevent overriding the parent project's compiler/linker settings
   set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)

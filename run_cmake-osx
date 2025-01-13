@@ -34,9 +34,11 @@ cd "$here"
 mkdir -p "$tmp"
 cd "$tmp"
 
+
 cmake -G "Unix Makefiles" \
     -DCMAKE_OSX_ARCHITECTURES="$APPLE_ARCH" \
     -DCMAKE_BUILD_TYPE="$buildtype" \
+    -DCMAKE_EXE_LINKER_FLAGS_RELEASE="-lz" \
     "${cmake_extra_args[@]}" \
     "$@" \
     ..

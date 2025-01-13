@@ -2910,7 +2910,7 @@ struct FocalLengthValidator : public wxIntegerValidator<int>
     }
 };
 
-#if defined(__LINUX__) || defined(__FreeBSD__)
+#if defined(__LINUX__) || defined(__FreeBSD__) || defined(__APPLE__)
 // ugly workaround for Issue 83 - link error on Linux
 //  undefined reference to wxPluralFormsCalculatorPtr::~wxPluralFormsCalculatorPtr
 wxPluralFormsCalculatorPtr::~wxPluralFormsCalculatorPtr() { }
